@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import "./UploadModal.css";
 
 export default function UploadModal({
   isOpen,
@@ -11,148 +10,121 @@ export default function UploadModal({
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isUploading) setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    if (isUploading) return;
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
-
-  const handleFileInputChange = (e) => {
-    if (isUploading) return;
-
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
+  if (!isOpen) return null;
 
   const handleFileSelect = (file) => {
     const allowedExtensions = ["pdf", "doc", "docx", "txt"];
-    const fileExtension = file.name.split(".").pop().toLowerCase();
+    const extension = file.name.split(".").pop().toLowerCase();
 
-    if (!allowedExtensions.includes(fileExtension)) {
+    if (!allowedExtensions.includes(extension)) {
       alert("Please upload a PDF, DOC, DOCX, or TXT file");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
+      alert("File must be smaller than 10MB");
       return;
     }
 
     setSelectedFile(file);
   };
 
-  const handleRemoveFile = () => {
-    if (isUploading) return;
-
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const handleUpload = () => {
-    if (!selectedFile || !onUpload || isUploading) return;
+    if (!selectedFile) return;
     onUpload(selectedFile);
+    setSelectedFile(null);
+    onClose();
   };
-
-  const handleBrowseClick = () => {
-    if (!isUploading) fileInputRef.current?.click();
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-  };
-
-  if (!isOpen) return null;
 
   return (
-    <div className="upload-modal-overlay" onClick={!isUploading ? onClose : undefined}>
-      <div className="upload-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="upload-modal-header">
-          <h2 className="upload-modal-title">Upload Resume</h2>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div
+        className="bg-white w-full max-w-md rounded-xl shadow-lg p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Upload Resume
+          </h2>
           <button
-            className="upload-modal-close"
             onClick={onClose}
-            disabled={isUploading}
+            className="text-gray-400 hover:text-gray-600"
           >
             ✕
           </button>
         </div>
 
-        <div className="upload-modal-body">
-          {!selectedFile ? (
-            <div
-              className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <h3>Drag & drop your resume here</h3>
-              <p>or</p>
-              <button className="browse-button" onClick={handleBrowseClick}>
-                Browse Files
-              </button>
-              <p>PDF and Images (Max 10MB)</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileInputChange}
-                hidden
-              />
-            </div>
-          ) : (
-            <div className="file-preview">
-              <p className="file-name">{selectedFile.name}</p>
-              <p className="file-size">{formatFileSize(selectedFile.size)}</p>
-              {!isUploading && (
-                <button className="file-remove" onClick={handleRemoveFile}>
-                  Remove
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Dropzone */}
+        {!selectedFile ? (
+          <div
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
+              isDragging
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-gray-300"
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              handleFileSelect(e.dataTransfer.files[0]);
+            }}
+            onClick={() => fileInputRef.current.click()}
+          >
+            <p className="text-gray-600 font-medium">
+              Drag & drop your resume here
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              or click to browse
+            </p>
 
-        <div className="upload-modal-footer">
-          <button className="cancel-button" onClick={onClose} disabled={isUploading}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => handleFileSelect(e.target.files[0])}
+            />
+          </div>
+        ) : (
+          <div className="border rounded-lg p-4 flex justify-between items-center">
+            <div>
+              <p className="font-medium text-gray-800">
+                {selectedFile.name}
+              </p>
+              <p className="text-sm text-gray-500">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedFile(null)}
+              className="text-red-500 text-sm"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm rounded-md border text-gray-600 hover:bg-gray-100"
+          >
             Cancel
           </button>
           <button
-            className="upload-button"
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
+            className={`px-4 py-2 text-sm rounded-md text-white ${
+              isUploading || !selectedFile
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
           >
             {isUploading ? "Analyzing..." : "Upload Resume"}
           </button>
