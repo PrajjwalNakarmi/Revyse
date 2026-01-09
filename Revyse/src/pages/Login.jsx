@@ -1,113 +1,109 @@
 import { useState } from "react";
-import { loginUser } from "../services/authService";
 import { useNavigate, Link } from "react-router-dom";
-import "./login.css";
+import { loginUser } from "../services/authService";
 
-const Login = () => {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      console.log("LOGIN BUTTON CLICKED");
-
       const data = await loginUser({ email, password });
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-layout">
-        {/* Branding */}
-        <div className="login-branding">
-          <div className="brand-header">
-            <div className="logo-placeholder">📄</div>
-            <h1 className="brand-name">Revyse</h1>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl w-full bg-white rounded-2xl shadow overflow-hidden">
 
-          <p className="brand-tagline">
+        {/* LEFT BRANDING */}
+        <div className="hidden md:flex flex-col justify-center px-12 py-16 bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+          <h1 className="text-3xl font-bold mb-6">Revyse</h1>
+
+          <p className="text-sm leading-relaxed mb-10 text-indigo-100">
             AI-powered CV analysis and smart job matching to boost your career.
           </p>
 
-          <ul className="feature-list">
-            <li className="feature-item">
-              <span className="checkmark">✓</span>
+          <ul className="space-y-4 text-sm">
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-green-500 rounded-full text-xs font-bold">✓</span>
               CV Analysis & Insights
             </li>
-            <li className="feature-item">
-              <span className="checkmark">✓</span>
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-green-500 rounded-full text-xs font-bold">✓</span>
               Job Matching
             </li>
-            <li className="feature-item">
-              <span className="checkmark">✓</span>
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-green-500 rounded-full text-xs font-bold">✓</span>
               AI CV Generation
             </li>
           </ul>
         </div>
 
-        {/* Login Inputs (NO FORM) */}
-        <div className="login-form-container">
-          <div className="form-header">
-            <h2 className="form-title">Welcome Back</h2>
-            <p className="form-subtitle">
-              Login to access your dashboard
-            </p>
-          </div>
+        {/* RIGHT FORM */}
+        <div className="px-8 py-12 md:px-12 flex flex-col justify-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Welcome Back
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Login to access your dashboard
+          </p>
 
-          {error && <p style={{ color: "red" }}>{error}</p>}
+          {error && (
+            <p className="text-sm text-red-500 mb-4">{error}</p>
+          )}
 
-          
-          <div className="login-form">
-            <label>
-              Email
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Email
+              </label>
               <input
                 type="email"
-                placeholder="Enter your email"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-            </label>
+            </div>
 
-            <label>
-              Password
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Password
+              </label>
               <input
                 type="password"
-                placeholder="Enter your password"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-            </label>
+            </div>
 
             <button
-              className="login-button"
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
             >
               Login
             </button>
-          </div>
+          </form>
 
-          <div className="form-footer">
+          <p className="text-sm text-gray-500 mt-6 text-center">
             Don’t have an account?{" "}
-            <Link to="/register" className="register-link">
+            <Link to="/register" className="text-indigo-600 font-semibold">
               Register
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}

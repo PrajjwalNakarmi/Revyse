@@ -2,17 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import UploadModal from "../components/UploadModal";
+import { analyzeCV, saveAnalysisData } from "../services/cvAnalysis";
 import {
   getUserResumes,
   getUserStats,
   addUserResume,
-  deleteUserResume,
 } from "../services/userService";
-import { uploadResumeForOCR } from "../services/ocrService";
-import "./dashboard.css";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(() => {
+  const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
@@ -30,47 +28,31 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
+
     setResumes(getUserResumes(user.id));
     setStats(getUserStats(user.id));
   }, [user]);
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const getDisplayName = () => {
-    return user?.name || user?.fullName || "User";
-  };
-
-  const handleUploadClick = () => {
-    setIsUploadModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsUploadModalOpen(false);
-  };
 
   const handleFileUpload = async (file) => {
     if (!user) return;
 
     setIsUploading(true);
     try {
-      const ocrResult = await uploadResumeForOCR(file);
+      const analysisData = await analyzeCV(file);
+      saveAnalysisData(analysisData);
 
       const resumeData = {
         fileName: file.name,
-        name: `${getDisplayName()} - ${file.name.replace(/\.[^/.]+$/, "")}`,
+        name: `${user.name || user.fullName} - ${file.name.replace(
+          /\.[^/.]+$/,
+          ""
+        )}`,
         uploadDate: new Date().toISOString(),
-        extractedText: ocrResult.text,
-        method: ocrResult.method,
-        score: 0,
-        atsScore: 0,
-        experiences: 0,
-        skills: 0,
+        score: analysisData.overallScore,
+        atsScore: analysisData.atsScore,
+        experiences: analysisData.extractedInfo.experienceCount,
+        skills: analysisData.extractedInfo.skillsCount,
+        analysisData,
       };
 
       addUserResume(user.id, resumeData);
@@ -78,139 +60,115 @@ export default function Dashboard() {
       setResumes(getUserResumes(user.id));
       setStats(getUserStats(user.id));
 
+      localStorage.setItem("selectedResume", JSON.stringify(resumeData));
       navigate("/analysis");
     } catch (err) {
-      alert("OCR failed. Try again.");
+      console.error(err);
+      alert("Failed to analyze resume");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDeleteResume = (e, resume) => {
-    e.stopPropagation(); // Prevent card click from firing
-    
-    if (window.confirm("Are you sure you want to delete this resume?")) {
-      // Use id if available, otherwise use uploadDate as identifier
-      const identifier = resume.id || resume.uploadDate;
-      deleteUserResume(user.id, identifier);
-      setResumes(getUserResumes(user.id));
-      setStats(getUserStats(user.id));
-    }
-  };
-
   if (!user) {
-    return <div>Loading dashboard...</div>;
+    return <div className="p-10 text-center">Loading dashboard...</div>;
   }
 
   return (
-    <div className="dashboard">
-      <Navbar onUploadClick={handleUploadClick} />
+    <div className="min-h-screen bg-gray-100">
+      <Navbar onUploadClick={() => setIsUploadModalOpen(true)} />
 
-      <main className="dashboard-content">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Welcome */}
-        <div className="welcome-section">
-          <h1 className="welcome-title">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-800">
             Welcome back,{" "}
-            <span className="welcome-name">{getDisplayName()}</span>
+            <span className="text-indigo-600">
+              {user.name || user.fullName}
+            </span>
           </h1>
-          <p className="welcome-subtitle">
-            Here's an overview of your resume analytics and recent uploads.
+          <p className="text-gray-500 mt-2">
+            Here is an overview of your resumes and analytics
           </p>
         </div>
 
         {/* Stats */}
-        <section className="resumes-section">
-          <div className="section-header">
-            <h2 className="section-title">Your Resumes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-sm text-gray-500">Total Resumes</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {stats.totalResumes}
+            </p>
           </div>
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{stats.totalResumes}</div>
-              <div className="stat-label">Total Resumes</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-value">{stats.averageScore}</div>
-              <div className="stat-label">Average Score</div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-value">{stats.avgAtsScore}%</div>
-              <div className="stat-label">Avg ATS Score</div>
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-sm text-gray-500">Average Score</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {stats.averageScore}
+            </p>
           </div>
-        </section>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-sm text-gray-500">Avg ATS Score</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              {stats.avgAtsScore}%
+            </p>
+          </div>
+        </div>
 
         {/* Recent Resumes */}
-        <section className="recent-resumes-section">
-          <h2 className="section-title">Recent Resumes</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Recent Resumes
+          </h2>
 
           {resumes.length > 0 ? (
-            <div className="resume-list">
+            <div className="space-y-4">
               {resumes.slice(0, 5).map((resume) => (
                 <div
                   key={resume.uploadDate}
-                  className="resume-card"
                   onClick={() => {
-                    localStorage.setItem("selectedResume", JSON.stringify(resume));
+                    localStorage.setItem(
+                      "selectedResume",
+                      JSON.stringify(resume)
+                    );
                     navigate("/analysis");
                   }}
+                  className="bg-white p-6 rounded-xl shadow flex justify-between items-center cursor-pointer hover:shadow-md transition"
                 >
-                  <div className="resume-card-left">
-                    <div className="resume-info">
-                      <h3 className="resume-name">{resume.name}</h3>
-                      <div className="resume-meta">
-                        <span>{formatDate(resume.uploadDate)}</span>
-                        <span>•</span>
-                        <span>{resume.experiences} experiences</span>
-                        <span>•</span>
-                        <span>{resume.skills} skills</span>
-                      </div>
-                    </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">
+                      {resume.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(resume.uploadDate).toLocaleDateString()} •{" "}
+                      {resume.experiences || 0} experiences •{" "}
+                      {resume.skills || 0} skills
+                    </p>
                   </div>
 
-                  <div className="resume-card-right">
-                    <div className="resume-scores">
-                      <div className="score-box">
-                        <span>Score:</span>
-                        <span>{resume.score}/100</span>
-                      </div>
-                      <div className="ats-box">
-                        <span className="ats-label">ATS:</span>
-                        <span className="ats-value">{resume.atsScore}%</span>
-                      </div>
-                    </div>
-                    <button
-                      className="delete-resume-btn"
-                      onClick={(e) => handleDeleteResume(e, resume)}
-                      aria-label="Delete resume"
-                      title="Delete resume"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path
-                          d="M5 5L15 15M15 5L5 15"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-800">
+                      Score: {resume.score}/100
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      ATS: {resume.atsScore}%
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="empty-resumes">
-              No resumes uploaded yet.
+            <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
+              No resumes uploaded yet
             </div>
           )}
-        </section>
+        </div>
       </main>
 
       <UploadModal
         isOpen={isUploadModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => setIsUploadModalOpen(false)}
         onUpload={handleFileUpload}
         isUploading={isUploading}
       />
