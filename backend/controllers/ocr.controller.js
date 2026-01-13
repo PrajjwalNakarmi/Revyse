@@ -1,12 +1,9 @@
 import fs from "fs";
 import path from "path";
 import Tesseract from "tesseract.js";
-import { createRequire } from "module";
+import { pdfToImages } from "../utils/pdfToImages.js";
 import { calculateATSScore } from "../utils/atsScorer.js";
 import { generateAIImprovements } from "../services/aiImprovement.service.js";
-
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 
 export const extractText = async (req, res) => {
   try {
@@ -20,26 +17,39 @@ export const extractText = async (req, res) => {
     let extractedText = "";
     let method = "";
 
+    /* ---------- PDF → IMAGE → OCR ---------- */
     if (ext === ".pdf") {
-      try {
-        const buffer = fs.readFileSync(filePath);
-        const pdf = await pdfParse(buffer);
+      const outputDir = `uploads/pdf_images_${Date.now()}`;
 
-        if (pdf.text && pdf.text.trim().length > 50) {
-          extractedText = pdf.text;
-          method = "pdf-text";
-        }
-      } catch {
-        method = "ocr-fallback";
+      await pdfToImages(filePath, outputDir);
+      const images = fs.readdirSync(outputDir);
+
+      for (const img of images) {
+        const imgPath = path.join(outputDir, img);
+        const ocr = await Tesseract.recognize(imgPath, "eng");
+        extractedText += "\n" + ocr.data.text;
       }
+
+      fs.rmSync(outputDir, { recursive: true, force: true });
+      method = "pdf-to-image-ocr";
     }
 
-    if (!extractedText) {
+    /* ---------- IMAGE OCR ---------- */
+    if ([".png", ".jpg", ".jpeg"].includes(ext)) {
       const ocr = await Tesseract.recognize(filePath, "eng");
       extractedText = ocr.data.text;
-      method = "ocr";
+      method = "image-ocr";
     }
 
+    if (!extractedText || extractedText.trim().length < 50) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({
+        message: "Failed to extract text. Please upload a clearer CV.",
+        method
+      });
+    }
+
+    /* ---------- ATS + AI ---------- */
     const atsScore = calculateATSScore(extractedText);
     const aiImprovements = await generateAIImprovements(extractedText);
 
@@ -55,7 +65,7 @@ export const extractText = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("OCR Error:", err);
     return res.status(500).json({ message: "Resume analysis failed" });
   }
 };
