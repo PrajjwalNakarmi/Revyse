@@ -2,9 +2,8 @@ import fs from "fs";
 import path from "path";
 import Tesseract from "tesseract.js";
 import { createRequire } from "module";
-
 import { calculateATSScore } from "../utils/atsScorer.js";
-import { generateAIImprovements } from "../sevices/aiImprovement.service.js";
+import { generateAIImprovements } from "../services/aiImprovement.service.js";
 
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
@@ -16,53 +15,47 @@ export const extractText = async (req, res) => {
     }
 
     const filePath = req.file.path;
-    const fileExt = path.extname(req.file.originalname).toLowerCase();
+    const ext = path.extname(req.file.originalname).toLowerCase();
 
     let extractedText = "";
     let method = "";
 
-    // Step 1: Try PDF text extraction
-    if (fileExt === ".pdf") {
+    if (ext === ".pdf") {
       try {
         const buffer = fs.readFileSync(filePath);
-        const pdfData = await pdfParse(buffer);
+        const pdf = await pdfParse(buffer);
 
-        if (pdfData.text && pdfData.text.trim().length > 50) {
-          extractedText = pdfData.text;
-          method = "PDF Text Extraction";
+        if (pdf.text && pdf.text.trim().length > 50) {
+          extractedText = pdf.text;
+          method = "pdf-text";
         }
       } catch {
-        console.warn("PDF text extraction failed, falling back to OCR");
+        method = "ocr-fallback";
       }
     }
 
-    // Step 2: OCR fallback
     if (!extractedText) {
-      const ocrResult = await Tesseract.recognize(filePath, "eng");
-      extractedText = ocrResult.data.text;
-      method = "OCR (Tesseract)";
+      const ocr = await Tesseract.recognize(filePath, "eng");
+      extractedText = ocr.data.text;
+      method = "ocr";
     }
 
-    // Step 3: ATS score
     const atsScore = calculateATSScore(extractedText);
+    const aiImprovements = await generateAIImprovements(extractedText);
 
-    // Step 4: AI Improvements
-    const aiImprovements = generateAIImprovements(extractedText);
-
-    // Cleanup uploaded file
     fs.unlinkSync(filePath);
 
     return res.json({
       fileName: req.file.originalname,
       extractedText,
       atsScore,
-      skills: [], // optional, can be filled later
-      aiImprovements,
-      method
+      score: atsScore,
+      method,
+      aiImprovements
     });
 
-  } catch (error) {
-    console.error("OCR ERROR:", error);
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({ message: "Resume analysis failed" });
   }
 };

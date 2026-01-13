@@ -1,39 +1,48 @@
-import OpenAI from "openai";
+import fetch from "node-fetch";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 export async function generateAIImprovements(resumeText) {
   if (!resumeText || resumeText.length < 100) {
-    return ["Resume content is too short for AI analysis."];
+    return ["Resume text too short for AI analysis"];
   }
 
-  const response = await client.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: "You are an ATS resume expert.",
-      },
-      {
-        role: "user",
-        content: `
-Analyze the following resume and provide improvement suggestions
-focused on ATS optimization, clarity, and structure.
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192",
+      messages: [
+        {
+          role: "system",
+          content: "You are an ATS resume expert."
+        },
+        {
+          role: "user",
+          content: `
+Analyze this resume and suggest improvements.
+Return bullet points only.
 
 Resume:
 ${resumeText}
-        `,
-      },
-    ],
-    temperature: 0.4,
+          `
+        }
+      ],
+      temperature: 0.4
+    })
   });
 
-  const text = response.choices[0].message.content;
+  if (!response.ok) {
+    throw new Error("Groq API failed");
+  }
 
-  return text
+  const data = await response.json();
+
+  return data.choices[0].message.content
     .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .map(line => line.replace(/^[-•]\s*/, "").trim())
+    .filter(Boolean);
 }
