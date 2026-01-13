@@ -1,11 +1,8 @@
 import fs from "fs";
 import path from "path";
 import Tesseract from "tesseract.js";
-import { createRequire } from "module";
+import pdfPoppler from "pdf-poppler";
 import { calculateATSScore } from "../utils/atsScorer.js";
-
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 
 export const extractText = async (req, res) => {
   try {
@@ -19,48 +16,53 @@ export const extractText = async (req, res) => {
     let extractedText = "";
     let method = "";
 
-    // STEP 1: PDF text extraction
+    // Directory to store temp images
+    const outputDir = path.join("uploads", `images-${Date.now()}`);
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    // Convert PDF to images
     if (fileExt === ".pdf") {
-      try {
-        const buffer = fs.readFileSync(filePath);
-        const pdfData = await pdfParse(buffer);
+      const options = {
+        format: "png",
+        out_dir: outputDir,
+        out_prefix: "page",
+        page: null
+      };
 
-        if (pdfData.text && pdfData.text.trim().length > 50) {
-          extractedText = pdfData.text;
-          method = "PDF Text Extraction";
-        } else {
-          method = "PDF (No readable text)";
-        }
-      } catch (err) {
-        method = "PDF Parse Failed";
+      await pdfPoppler.convert(filePath, options);
+
+      const imageFiles = fs
+        .readdirSync(outputDir)
+        .filter(file => file.endsWith(".png"));
+
+      for (const img of imageFiles) {
+        const imgPath = path.join(outputDir, img);
+        const result = await Tesseract.recognize(imgPath, "eng");
+        extractedText += result.data.text + "\n";
       }
+
+      method = "PDF → Image → OCR";
     }
 
-    // STEP 2: OCR only for images
-    if (!extractedText && fileExt !== ".pdf") {
-      const ocrResult = await Tesseract.recognize(filePath, "eng");
-      extractedText = ocrResult.data.text;
-      method = "OCR (Tesseract)";
+    if (!extractedText.trim()) {
+      throw new Error("No text extracted");
     }
 
-    // If still no text
-    if (!extractedText) {
-      extractedText = "No readable text found in document.";
-    }
-
-    // STEP 3: ATS Score
     const atsScore = calculateATSScore(extractedText);
 
+    // Cleanup
     fs.unlinkSync(filePath);
+    fs.rmSync(outputDir, { recursive: true, force: true });
 
     return res.json({
       fileName: req.file.originalname,
       extractedText,
       atsScore,
-      method,
+      method
     });
+
   } catch (error) {
     console.error("OCR ERROR:", error);
-    return res.status(500).json({ message: "OCR failed" });
+    return res.status(500).json({ message: "Resume analysis failed" });
   }
 };
