@@ -1,17 +1,25 @@
-const API_URL = "http://localhost:5000/api/ocr";
+const API_URL = "http://localhost:5000/api/ocr/upload";
 
 export async function uploadResumeForOCR(file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/upload`, {
+  const response = await fetch(API_URL, {
     method: "POST",
-    body: formData
+    body: formData,
   });
 
-  if (!res.ok) {
-    throw new Error("OCR failed");
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "OCR request failed");
   }
 
-  return res.json();
+  const data = await response.json();
+
+  return {
+    fileName: data.fileName,
+    extractedText: data.extractedText,
+    atsScore: data.atsScore ?? 0,
+    method: data.method,
+  };
 }

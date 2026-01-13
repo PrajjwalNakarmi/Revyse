@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import UploadModal from "../components/UploadModal";
-import { analyzeCV, saveAnalysisData } from "../services/cvAnalysis";
 import {
   getUserResumes,
   getUserStats,
   addUserResume,
+  deleteUserResume,
 } from "../services/userService";
+import { uploadResumeForOCR } from "../services/ocrService";
 
 export default function Dashboard() {
   const [user] = useState(() => {
@@ -28,7 +29,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-
     setResumes(getUserResumes(user.id));
     setStats(getUserStats(user.id));
   }, [user]);
@@ -38,21 +38,19 @@ export default function Dashboard() {
 
     setIsUploading(true);
     try {
-      const analysisData = await analyzeCV(file);
-      saveAnalysisData(analysisData);
+      const ocrResult = await uploadResumeForOCR(file);
 
       const resumeData = {
-        fileName: file.name,
-        name: `${user.name || user.fullName} - ${file.name.replace(
+        fileName: ocrResult.fileName,
+        name: `${user.name || user.fullName} - ${ocrResult.fileName.replace(
           /\.[^/.]+$/,
           ""
         )}`,
+        extractedText: ocrResult.extractedText,
+        atsScore: ocrResult.atsScore,
+        score: ocrResult.atsScore,
+        method: ocrResult.method,
         uploadDate: new Date().toISOString(),
-        score: analysisData.overallScore,
-        atsScore: analysisData.atsScore,
-        experiences: analysisData.extractedInfo.experienceCount,
-        skills: analysisData.extractedInfo.skillsCount,
-        analysisData,
       };
 
       addUserResume(user.id, resumeData);
@@ -62,12 +60,21 @@ export default function Dashboard() {
 
       localStorage.setItem("selectedResume", JSON.stringify(resumeData));
       navigate("/analysis");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to analyze resume");
+    } catch (error) {
+      console.error(error);
+      alert("Resume analysis failed");
     } finally {
       setIsUploading(false);
+      setIsUploadModalOpen(false);
     }
+  };
+
+  const handleDeleteResume = (resumeId) => {
+    if (!user) return;
+
+    const updatedResumes = deleteUserResume(user.id, resumeId);
+    setResumes(updatedResumes);
+    setStats(getUserStats(user.id));
   };
 
   if (!user) {
@@ -79,7 +86,6 @@ export default function Dashboard() {
       <Navbar onUploadClick={() => setIsUploadModalOpen(true)} />
 
       <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* Welcome */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
             Welcome back,{" "}
@@ -127,33 +133,48 @@ export default function Dashboard() {
               {resumes.slice(0, 5).map((resume) => (
                 <div
                   key={resume.uploadDate}
-                  onClick={() => {
-                    localStorage.setItem(
-                      "selectedResume",
-                      JSON.stringify(resume)
-                    );
-                    navigate("/analysis");
-                  }}
-                  className="bg-white p-6 rounded-xl shadow flex justify-between items-center cursor-pointer hover:shadow-md transition"
+                  className="bg-white p-6 rounded-xl shadow flex justify-between items-center"
                 >
-                  <div>
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => {
+                      localStorage.setItem(
+                        "selectedResume",
+                        JSON.stringify(resume)
+                      );
+                      navigate("/analysis");
+                    }}
+                  >
                     <h3 className="font-semibold text-gray-800">
                       {resume.name}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      {new Date(resume.uploadDate).toLocaleDateString()} •{" "}
-                      {resume.experiences || 0} experiences •{" "}
-                      {resume.skills || 0} skills
+                      {new Date(resume.uploadDate).toLocaleDateString()}
                     </p>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-800">
-                      Score: {resume.score}/100
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      ATS: {resume.atsScore}%
-                    </p>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-800">
+                        Score: {resume.score}/100
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        ATS: {resume.atsScore}%
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteResume(resume.uploadDate);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-full
+                                 text-gray-400 hover:text-red-600 hover:bg-red-50
+                                 transition"
+                      title="Remove resume"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
               ))}

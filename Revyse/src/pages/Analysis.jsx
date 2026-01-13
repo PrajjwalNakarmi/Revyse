@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { extractSkillsFromText } from "../utils/skillsExtractor";
+import { extractSkillsFromText } from "../../../backend/utils/skillsExtractor";
 
 export default function Analysis() {
   const [resume, setResume] = useState(null);
