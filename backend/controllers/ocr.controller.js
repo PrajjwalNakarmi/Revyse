@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 import Tesseract from "tesseract.js";
-import pdfPoppler from "pdf-poppler";
+import { createRequire } from "module";
+
 import { calculateATSScore } from "../utils/atsScorer.js";
+import { generateAIImprovements } from "../sevices/aiImprovement.service.js";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 export const extractText = async (req, res) => {
   try {
@@ -16,48 +21,43 @@ export const extractText = async (req, res) => {
     let extractedText = "";
     let method = "";
 
-    // Directory to store temp images
-    const outputDir = path.join("uploads", `images-${Date.now()}`);
-    fs.mkdirSync(outputDir, { recursive: true });
-
-    // Convert PDF to images
+    // Step 1: Try PDF text extraction
     if (fileExt === ".pdf") {
-      const options = {
-        format: "png",
-        out_dir: outputDir,
-        out_prefix: "page",
-        page: null
-      };
+      try {
+        const buffer = fs.readFileSync(filePath);
+        const pdfData = await pdfParse(buffer);
 
-      await pdfPoppler.convert(filePath, options);
-
-      const imageFiles = fs
-        .readdirSync(outputDir)
-        .filter(file => file.endsWith(".png"));
-
-      for (const img of imageFiles) {
-        const imgPath = path.join(outputDir, img);
-        const result = await Tesseract.recognize(imgPath, "eng");
-        extractedText += result.data.text + "\n";
+        if (pdfData.text && pdfData.text.trim().length > 50) {
+          extractedText = pdfData.text;
+          method = "PDF Text Extraction";
+        }
+      } catch {
+        console.warn("PDF text extraction failed, falling back to OCR");
       }
-
-      method = "PDF → Image → OCR";
     }
 
-    if (!extractedText.trim()) {
-      throw new Error("No text extracted");
+    // Step 2: OCR fallback
+    if (!extractedText) {
+      const ocrResult = await Tesseract.recognize(filePath, "eng");
+      extractedText = ocrResult.data.text;
+      method = "OCR (Tesseract)";
     }
 
+    // Step 3: ATS score
     const atsScore = calculateATSScore(extractedText);
 
-    // Cleanup
+    // Step 4: AI Improvements
+    const aiImprovements = generateAIImprovements(extractedText);
+
+    // Cleanup uploaded file
     fs.unlinkSync(filePath);
-    fs.rmSync(outputDir, { recursive: true, force: true });
 
     return res.json({
       fileName: req.file.originalname,
       extractedText,
       atsScore,
+      skills: [], // optional, can be filled later
+      aiImprovements,
       method
     });
 

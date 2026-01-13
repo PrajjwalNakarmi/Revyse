@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function UploadModal({
   isOpen,
@@ -10,9 +10,18 @@ export default function UploadModal({
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedFile(null);
+      setIsDragging(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleFileSelect = (file) => {
+    if (!file) return;
+
     const allowedExtensions = ["pdf", "doc", "docx", "txt"];
     const extension = file.name.split(".").pop().toLowerCase();
 
@@ -30,17 +39,26 @@ export default function UploadModal({
   };
 
   const handleUpload = () => {
-    if (!selectedFile) return;
+    if (!selectedFile || isUploading) return;
     onUpload(selectedFile);
-    setSelectedFile(null);
-    onClose();
   };
 
+  const formatFileSize = (bytes) =>
+    (bytes / (1024 * 1024)).toFixed(2) + " MB";
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      {/* Backdrop */}
       <div
-        className="bg-white w-full max-w-md rounded-xl shadow-lg p-6"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0"
+        onClick={() => {
+          if (!isUploading) onClose();
+        }}
+      />
+
+      {/* Modal */}
+      <div
+        className="relative bg-white w-full max-w-md rounded-xl shadow-lg p-6"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
@@ -49,9 +67,10 @@ export default function UploadModal({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            disabled={isUploading}
+            className="text-gray-400 hover:text-gray-600 text-lg disabled:opacity-50"
           >
-            ✕
+            ×
           </button>
         </div>
 
@@ -67,16 +86,19 @@ export default function UploadModal({
               e.preventDefault();
               setIsDragging(true);
             }}
-            onDragLeave={() => setIsDragging(false)}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+            }}
             onDrop={(e) => {
               e.preventDefault();
               setIsDragging(false);
-              handleFileSelect(e.dataTransfer.files[0]);
+              handleFileSelect(e.dataTransfer.files?.[0]);
             }}
-            onClick={() => fileInputRef.current.click()}
+            onClick={() => fileInputRef.current?.click()}
           >
             <p className="text-gray-600 font-medium">
-              Drag & drop your resume here
+              Drag and drop your resume here
             </p>
             <p className="text-sm text-gray-400 mt-1">
               or click to browse
@@ -87,7 +109,9 @@ export default function UploadModal({
               type="file"
               className="hidden"
               accept=".pdf,.doc,.docx,.txt"
-              onChange={(e) => handleFileSelect(e.target.files[0])}
+              onChange={(e) =>
+                handleFileSelect(e.target.files?.[0])
+              }
             />
           </div>
         ) : (
@@ -97,12 +121,13 @@ export default function UploadModal({
                 {selectedFile.name}
               </p>
               <p className="text-sm text-gray-500">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                {formatFileSize(selectedFile.size)}
               </p>
             </div>
             <button
               onClick={() => setSelectedFile(null)}
-              className="text-red-500 text-sm"
+              disabled={isUploading}
+              className="text-red-500 text-sm hover:underline disabled:opacity-50"
             >
               Remove
             </button>
@@ -113,7 +138,8 @@ export default function UploadModal({
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-md border text-gray-600 hover:bg-gray-100"
+            disabled={isUploading}
+            className="px-4 py-2 text-sm rounded-md border text-gray-600 hover:bg-gray-100 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -121,7 +147,7 @@ export default function UploadModal({
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
             className={`px-4 py-2 text-sm rounded-md text-white ${
-              isUploading || !selectedFile
+              isUploading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-700"
             }`}

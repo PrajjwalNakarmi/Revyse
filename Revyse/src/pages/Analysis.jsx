@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { extractSkillsFromText } from "../../../backend/utils/skillsExtractor";
 
 export default function Analysis() {
   const [resume, setResume] = useState(null);
-  const [skills, setSkills] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,13 +14,7 @@ export default function Analysis() {
       return;
     }
 
-    const parsedResume = JSON.parse(storedResume);
-    setResume(parsedResume);
-
-    if (parsedResume.extractedText) {
-      const extracted = extractSkillsFromText(parsedResume.extractedText);
-      setSkills(extracted);
-    }
+    setResume(JSON.parse(storedResume));
   }, [navigate]);
 
   if (!resume) {
@@ -38,7 +30,7 @@ export default function Analysis() {
           Resume Analysis
         </h1>
 
-        {/* Score Section */}
+        {/* Scores */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <div className="bg-white p-6 rounded-xl shadow">
             <h3 className="font-semibold text-gray-700 mb-2">
@@ -47,7 +39,7 @@ export default function Analysis() {
 
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-5xl font-bold text-gray-800">
-                {resume.score ?? 0}
+                {resume.score ?? resume.atsScore ?? 0}
               </span>
               <span className="text-xl text-gray-400">/100</span>
             </div>
@@ -55,7 +47,9 @@ export default function Analysis() {
             <div className="w-full h-2 bg-gray-200 rounded">
               <div
                 className="h-2 bg-indigo-500 rounded"
-                style={{ width: `${resume.score ?? 0}%` }}
+                style={{
+                  width: `${resume.score ?? resume.atsScore ?? 0}%`,
+                }}
               />
             </div>
           </div>
@@ -111,9 +105,9 @@ export default function Analysis() {
               Detected Skills
             </h3>
 
-            {skills.length > 0 ? (
+            {resume.skills && resume.skills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {skills.map((skill) => (
+                {resume.skills.map((skill) => (
                   <span
                     key={skill}
                     className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full"
@@ -124,10 +118,34 @@ export default function Analysis() {
               </div>
             ) : (
               <p className="text-sm text-gray-500">
-                No skills detected yet
+                No skills detected
               </p>
             )}
           </div>
+        </div>
+
+        {/* AI Improvements */}
+        <div className="bg-white p-6 rounded-xl shadow mb-10">
+          <h3 className="font-semibold text-gray-700 mb-4">
+            AI Improvement Suggestions
+          </h3>
+
+          {resume.aiImprovements && resume.aiImprovements.length > 0 ? (
+            <ul className="space-y-3 text-sm text-gray-700">
+              {resume.aiImprovements.map((item, index) => (
+                <li key={index} className="flex gap-3">
+                  <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">
+              No AI suggestions available
+            </p>
+          )}
         </div>
 
         {/* OCR Text */}

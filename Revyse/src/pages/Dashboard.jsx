@@ -37,19 +37,17 @@ export default function Dashboard() {
     if (!user) return;
 
     setIsUploading(true);
+
     try {
-      const ocrResult = await uploadResumeForOCR(file);
+      const result = await uploadResumeForOCR(file);
 
       const resumeData = {
-        fileName: ocrResult.fileName,
-        name: `${user.name || user.fullName} - ${ocrResult.fileName.replace(
-          /\.[^/.]+$/,
-          ""
-        )}`,
-        extractedText: ocrResult.extractedText,
-        atsScore: ocrResult.atsScore,
-        score: ocrResult.atsScore,
-        method: ocrResult.method,
+        fileName: result.fileName,
+        name: `${user.name || user.fullName} - ${result.fileName.replace(/\.[^/.]+$/, "")}`,
+        extractedText: result.extractedText,
+        atsScore: result.atsScore ?? 0,
+        score: result.atsScore ?? 0,
+        method: result.method,
         uploadDate: new Date().toISOString(),
       };
 
@@ -60,6 +58,7 @@ export default function Dashboard() {
 
       localStorage.setItem("selectedResume", JSON.stringify(resumeData));
       navigate("/analysis");
+
     } catch (error) {
       console.error(error);
       alert("Resume analysis failed");
@@ -68,6 +67,7 @@ export default function Dashboard() {
       setIsUploadModalOpen(false);
     }
   };
+
 
   const handleDeleteResume = (resumeId) => {
     if (!user) return;
