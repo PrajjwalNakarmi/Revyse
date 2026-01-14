@@ -24,3 +24,6 @@ app.listen(process.env.PORT || 5000, () => {
 });
 
 app.use("/api/ocr", ocrRoutes);
+console.log("GROQ_API_URL:", process.env.GROQ_API_URL);
+console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
+

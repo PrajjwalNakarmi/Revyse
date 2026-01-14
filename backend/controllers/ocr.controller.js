@@ -4,6 +4,7 @@ import Tesseract from "tesseract.js";
 import { pdfToImages } from "../utils/pdfToImages.js";
 import { calculateATSScore } from "../utils/atsScorer.js";
 import { generateAIImprovements } from "../services/aiImprovement.service.js";
+import { extractSkillsFromText } from "../utils/skillsExtractor.js";
 
 export const extractText = async (req, res) => {
   try {
@@ -17,13 +18,11 @@ export const extractText = async (req, res) => {
     let extractedText = "";
     let method = "";
 
-    /* ---------- PDF → IMAGE → OCR ---------- */
     if (ext === ".pdf") {
       const outputDir = `uploads/pdf_images_${Date.now()}`;
-
       await pdfToImages(filePath, outputDir);
-      const images = fs.readdirSync(outputDir);
 
+      const images = fs.readdirSync(outputDir);
       for (const img of images) {
         const imgPath = path.join(outputDir, img);
         const ocr = await Tesseract.recognize(imgPath, "eng");
@@ -34,7 +33,6 @@ export const extractText = async (req, res) => {
       method = "pdf-to-image-ocr";
     }
 
-    /* ---------- IMAGE OCR ---------- */
     if ([".png", ".jpg", ".jpeg"].includes(ext)) {
       const ocr = await Tesseract.recognize(filePath, "eng");
       extractedText = ocr.data.text;
@@ -43,14 +41,12 @@ export const extractText = async (req, res) => {
 
     if (!extractedText || extractedText.trim().length < 50) {
       fs.unlinkSync(filePath);
-      return res.status(400).json({
-        message: "Failed to extract text. Please upload a clearer CV.",
-        method
-      });
+      return res.status(400).json({ message: "Text extraction failed" });
     }
 
-    /* ---------- ATS + AI ---------- */
+    /* ---------- ATS + SKILLS + AI ---------- */
     const atsScore = calculateATSScore(extractedText);
+    const skills = extractSkillsFromText(extractedText);
     const aiImprovements = await generateAIImprovements(extractedText);
 
     fs.unlinkSync(filePath);
@@ -61,7 +57,8 @@ export const extractText = async (req, res) => {
       atsScore,
       score: atsScore,
       method,
-      aiImprovements
+      skills,            //  FIX
+      aiImprovements     //  FIX
     });
 
   } catch (err) {

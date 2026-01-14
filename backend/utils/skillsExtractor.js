@@ -1,63 +1,71 @@
 const SKILL_KEYWORDS = [
   // Programming Languages
-  "javascript",
-  "python",
-  "java",
-  "c",
-  "c++",
-  "c#",
-  "php",
-  "typescript",
+  { name: "javascript", variants: ["javascript", "js"] },
+  { name: "python", variants: ["python"] },
+  { name: "java", variants: ["java"] },
+  { name: "c", variants: [" c "] },
+  { name: "c++", variants: ["c++", "cpp"] },
+  { name: "c#", variants: ["c#", "c sharp"] },
+  { name: "php", variants: ["php"] },
+  { name: "typescript", variants: ["typescript", "ts"] },
 
   // Frontend
-  "html",
-  "css",
-  "react",
-  "vue",
-  "angular",
-  "next.js",
+  { name: "html", variants: ["html"] },
+  { name: "css", variants: ["css"] },
+  { name: "react", variants: ["react", "reactjs"] },
+  { name: "vue", variants: ["vue", "vuejs"] },
+  { name: "angular", variants: ["angular"] },
+  { name: "next.js", variants: ["next.js", "next js", "nextjs"] },
 
   // Backend
-  "node.js",
-  "express",
-  "django",
-  "flask",
-  "spring",
-  "laravel",
+  { name: "node.js", variants: ["node.js", "node js", "nodejs"] },
+  { name: "express", variants: ["express", "expressjs"] },
+  { name: "django", variants: ["django"] },
+  { name: "flask", variants: ["flask"] },
+  { name: "spring", variants: ["spring", "spring boot"] },
+  { name: "laravel", variants: ["laravel"] },
 
   // Databases
-  "mongodb",
-  "mysql",
-  "postgresql",
-  "sqlite",
+  { name: "mongodb", variants: ["mongodb", "mongo db"] },
+  { name: "mysql", variants: ["mysql"] },
+  { name: "postgresql", variants: ["postgresql", "postgres"] },
+  { name: "sqlite", variants: ["sqlite"] },
 
   // DevOps / Tools
-  "git",
-  "github",
-  "docker",
-  "kubernetes",
-  "aws",
-  "azure",
-  "firebase",
+  { name: "git", variants: ["git"] },
+  { name: "github", variants: ["github"] },
+  { name: "docker", variants: ["docker"] },
+  { name: "kubernetes", variants: ["kubernetes", "k8s"] },
+  { name: "aws", variants: ["aws", "amazon web services"] },
+  { name: "azure", variants: ["azure"] },
+  { name: "firebase", variants: ["firebase"] },
 
   // AI / Data
-  "machine learning",
-  "deep learning",
-  "nlp",
-  "data analysis",
-  "tensorflow",
-  "pytorch"
+  { name: "machine learning", variants: ["machine learning", "ml"] },
+  { name: "deep learning", variants: ["deep learning", "dl"] },
+  { name: "nlp", variants: ["nlp", "natural language processing"] },
+  { name: "data analysis", variants: ["data analysis", "data analytics"] },
+  { name: "tensorflow", variants: ["tensorflow"] },
+  { name: "pytorch", variants: ["pytorch"] },
 ];
 
 export function extractSkillsFromText(text) {
   if (!text) return [];
 
-  const normalizedText = text.toLowerCase();
+  // Normalize OCR text heavily
+  const normalizedText = text
+    .toLowerCase()
+    .replace(/[\n\r]/g, " ")
+    .replace(/\s+/g, " ");
+
   const foundSkills = new Set();
 
   for (const skill of SKILL_KEYWORDS) {
-    if (normalizedText.includes(skill)) {
-      foundSkills.add(skill);
+    for (const variant of skill.variants) {
+      if (normalizedText.includes(variant)) {
+        foundSkills.add(skill.name);
+        break;
+      }
     }
   }
 

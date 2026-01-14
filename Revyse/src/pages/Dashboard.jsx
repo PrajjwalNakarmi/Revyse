@@ -33,6 +33,7 @@ export default function Dashboard() {
     setStats(getUserStats(user.id));
   }, [user]);
 
+  // ✅ FIXED UPLOAD HANDLER
   const handleFileUpload = async (file) => {
     if (!user) return;
 
@@ -41,22 +42,33 @@ export default function Dashboard() {
     try {
       const result = await uploadResumeForOCR(file);
 
+      // ✅ INCLUDE skills + aiImprovements
       const resumeData = {
         fileName: result.fileName,
-        name: `${user.name || user.fullName} - ${result.fileName.replace(/\.[^/.]+$/, "")}`,
+        name: `${user.name || user.fullName} - ${
+          result.fileName.replace(/\.[^/.]+$/, "")
+        }`,
         extractedText: result.extractedText,
         atsScore: result.atsScore ?? 0,
         score: result.atsScore ?? 0,
         method: result.method,
+        skills: result.skills || [],                 // ✅ FIX
+        aiImprovements: result.aiImprovements || [], // ✅ FIX
         uploadDate: new Date().toISOString(),
       };
 
+      // Save for dashboard history
       addUserResume(user.id, resumeData);
 
       setResumes(getUserResumes(user.id));
       setStats(getUserStats(user.id));
 
-      localStorage.setItem("selectedResume", JSON.stringify(resumeData));
+      // ✅ Save FULL object for Analysis page
+      localStorage.setItem(
+        "selectedResume",
+        JSON.stringify(resumeData)
+      );
+
       navigate("/analysis");
 
     } catch (error) {
@@ -68,10 +80,8 @@ export default function Dashboard() {
     }
   };
 
-
   const handleDeleteResume = (resumeId) => {
     if (!user) return;
-
     const updatedResumes = deleteUserResume(user.id, resumeId);
     setResumes(updatedResumes);
     setStats(getUserStats(user.id));

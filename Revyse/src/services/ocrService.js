@@ -21,5 +21,8 @@ export async function uploadResumeForOCR(file) {
     extractedText: data.extractedText,
     atsScore: data.atsScore ?? 0,
     method: data.method,
+    // Forward skills and AI suggestions from backend to callers
+    skills: data.skills || [],
+    aiImprovements: data.aiImprovements || [],
   };
 }

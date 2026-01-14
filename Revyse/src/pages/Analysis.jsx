@@ -124,23 +124,41 @@ export default function Analysis() {
           </div>
         </div>
 
-        {/* AI Improvements */}
+        {/*  CLEAN AI IMPROVEMENTS UI */}
         <div className="bg-white p-6 rounded-xl shadow mb-10">
-          <h3 className="font-semibold text-gray-700 mb-4">
+          <h3 className="font-semibold text-gray-700 mb-5">
             AI Improvement Suggestions
           </h3>
 
           {resume.aiImprovements && resume.aiImprovements.length > 0 ? (
-            <ul className="space-y-3 text-sm text-gray-700">
-              {resume.aiImprovements.map((item, index) => (
-                <li key={index} className="flex gap-3">
-                  <span className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                    {index + 1}
-                  </span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4">
+              {resume.aiImprovements
+                // remove headings / markdown noise
+                .filter(
+                  (item) =>
+                    !item.toLowerCase().includes("improvement") &&
+                    !item.toLowerCase().includes("education") &&
+                    !item.toLowerCase().includes("projects") &&
+                    !item.toLowerCase().includes("summary") &&
+                    !item.startsWith("**")
+                )
+                .map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex gap-4 items-start border-l-4 border-indigo-500 bg-indigo-50/40 p-4 rounded-md"
+                  >
+                    {/* Number */}
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
+                      {index + 1}
+                    </div>
+
+                    {/* Text */}
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {item.replace(/^[-+•*]\s*/, "")}
+                    </p>
+                  </div>
+                ))}
+            </div>
           ) : (
             <p className="text-sm text-gray-500">
               No AI suggestions available
