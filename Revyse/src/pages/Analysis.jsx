@@ -124,40 +124,60 @@ export default function Analysis() {
           </div>
         </div>
 
-        {/*  CLEAN AI IMPROVEMENTS UI */}
+        {/* AI Improvements */}
         <div className="bg-white p-6 rounded-xl shadow mb-10">
           <h3 className="font-semibold text-gray-700 mb-5">
             AI Improvement Suggestions
           </h3>
 
           {resume.aiImprovements && resume.aiImprovements.length > 0 ? (
-            <div className="space-y-4">
-              {resume.aiImprovements
-                // remove headings / markdown noise
-                .filter(
-                  (item) =>
-                    !item.toLowerCase().includes("improvement") &&
-                    !item.toLowerCase().includes("education") &&
-                    !item.toLowerCase().includes("projects") &&
-                    !item.toLowerCase().includes("summary") &&
-                    !item.startsWith("**")
-                )
-                .map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 items-start border-l-4 border-indigo-500 bg-indigo-50/40 p-4 rounded-md"
-                  >
-                    {/* Number */}
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
-                      {index + 1}
-                    </div>
+            <div className="space-y-5">
+              {(() => {
+                let counter = 1;
 
-                    {/* Text */}
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {item.replace(/^[-+•*]\s*/, "")}
-                    </p>
-                  </div>
-                ))}
+                return resume.aiImprovements.map((item, index) => {
+                  const cleanItem = item.replace(/^[-+•*]\s*/, "").trim();
+
+                  //Detect section headings (e.g., "Skills:**", "Formatting:**")
+                  const isHeading =
+                    cleanItem.endsWith(":**") ||
+                    cleanItem.endsWith(":") &&
+                    cleanItem.length < 40 &&
+                    !cleanItem.toLowerCase().includes("use") &&
+                    !cleanItem.toLowerCase().includes("remove") &&
+                    !cleanItem.toLowerCase().includes("add");
+
+                  if (isHeading) {
+                    return (
+                      <h4
+                        key={`heading-${index}`}
+                        className="text-gray-800 font-semibold text-sm uppercase tracking-wide mt-4"
+                      >
+                        {cleanItem.replace(/[:*]/g, "")}
+                      </h4>
+                    );
+                  }
+
+                  // Skip empty or noise lines
+                  if (!cleanItem) return null;
+
+                  // ✅ Render numbered actionable suggestion
+                  return (
+                    <div
+                      key={`point-${index}`}
+                      className="flex gap-4 items-start border-l-4 border-indigo-500 bg-indigo-50/40 p-4 rounded-md"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
+                        {counter++}
+                      </div>
+
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {cleanItem}
+                      </p>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           ) : (
             <p className="text-sm text-gray-500">
