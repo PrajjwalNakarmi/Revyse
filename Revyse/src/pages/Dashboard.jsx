@@ -29,11 +29,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    setResumes(getUserResumes(user.id));
+
+    const userResumes = getUserResumes(user.id);
+
+    setResumes(userResumes);
     setStats(getUserStats(user.id));
+
+    // Clear selected resume if user has no resumes
+    if (!userResumes || userResumes.length === 0) {
+      localStorage.removeItem("selectedResume");
+    }
+
   }, [user]);
 
-  // ✅ FIXED UPLOAD HANDLER
   const handleFileUpload = async (file) => {
     if (!user) return;
 
@@ -42,28 +50,25 @@ export default function Dashboard() {
     try {
       const result = await uploadResumeForOCR(file);
 
-      // ✅ INCLUDE skills + aiImprovements
       const resumeData = {
         fileName: result.fileName,
-        name: `${user.name || user.fullName} - ${
-          result.fileName.replace(/\.[^/.]+$/, "")
-        }`,
+        name: `${user.name || user.fullName} - ${result.fileName.replace(/\.[^/.]+$/, "")}`,
         extractedText: result.extractedText,
         atsScore: result.atsScore ?? 0,
         score: result.atsScore ?? 0,
         method: result.method,
-        skills: result.skills || [],                 // ✅ FIX
-        aiImprovements: result.aiImprovements || [], // ✅ FIX
+        skills: result.skills || [],
+        aiImprovements: result.aiImprovements || [],
         uploadDate: new Date().toISOString(),
       };
 
-      // Save for dashboard history
       addUserResume(user.id, resumeData);
 
-      setResumes(getUserResumes(user.id));
+      const updatedResumes = getUserResumes(user.id);
+
+      setResumes(updatedResumes);
       setStats(getUserStats(user.id));
 
-      // ✅ Save FULL object for Analysis page
       localStorage.setItem(
         "selectedResume",
         JSON.stringify(resumeData)
@@ -82,9 +87,16 @@ export default function Dashboard() {
 
   const handleDeleteResume = (resumeId) => {
     if (!user) return;
+
     const updatedResumes = deleteUserResume(user.id, resumeId);
+
     setResumes(updatedResumes);
     setStats(getUserStats(user.id));
+
+    // Clear selected resume if none remain
+    if (!updatedResumes || updatedResumes.length === 0) {
+      localStorage.removeItem("selectedResume");
+    }
   };
 
   if (!user) {
@@ -93,9 +105,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+
       <Navbar onUploadClick={() => setIsUploadModalOpen(true)} />
 
       <main className="max-w-7xl mx-auto px-6 py-10">
+
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
             Welcome back,{" "}
@@ -103,13 +117,14 @@ export default function Dashboard() {
               {user.name || user.fullName}
             </span>
           </h1>
+
           <p className="text-gray-500 mt-2">
             Here is an overview of your resumes and analytics
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+
           <div className="bg-white p-6 rounded-xl shadow">
             <p className="text-sm text-gray-500">Total Resumes</p>
             <p className="text-3xl font-bold text-gray-800 mt-2">
@@ -130,21 +145,26 @@ export default function Dashboard() {
               {stats.avgAtsScore}%
             </p>
           </div>
+
         </div>
 
-        {/* Recent Resumes */}
         <div>
+
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
             Recent Resumes
           </h2>
 
           {resumes.length > 0 ? (
+
             <div className="space-y-4">
+
               {resumes.slice(0, 5).map((resume) => (
+
                 <div
                   key={resume.uploadDate}
                   className="bg-white p-6 rounded-xl shadow flex justify-between items-center"
                 >
+
                   <div
                     className="cursor-pointer"
                     onClick={() => {
@@ -155,22 +175,29 @@ export default function Dashboard() {
                       navigate("/analysis");
                     }}
                   >
+
                     <h3 className="font-semibold text-gray-800">
                       {resume.name}
                     </h3>
+
                     <p className="text-sm text-gray-500 mt-1">
                       {new Date(resume.uploadDate).toLocaleDateString()}
                     </p>
+
                   </div>
 
                   <div className="flex items-center gap-6">
+
                     <div className="text-right">
+
                       <p className="text-sm font-semibold text-gray-800">
                         Score: {resume.score}/100
                       </p>
+
                       <p className="text-sm text-gray-500">
                         ATS: {resume.atsScore}%
                       </p>
+
                     </div>
 
                     <button
@@ -179,22 +206,30 @@ export default function Dashboard() {
                         handleDeleteResume(resume.uploadDate);
                       }}
                       className="w-8 h-8 flex items-center justify-center rounded-full
-                                 text-gray-400 hover:text-red-600 hover:bg-red-50
-                                 transition"
+                      text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
                       title="Remove resume"
                     >
                       ×
                     </button>
+
                   </div>
+
                 </div>
+
               ))}
+
             </div>
+
           ) : (
+
             <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
               No resumes uploaded yet
             </div>
+
           )}
+
         </div>
+
       </main>
 
       <UploadModal
@@ -203,6 +238,7 @@ export default function Dashboard() {
         onUpload={handleFileUpload}
         isUploading={isUploading}
       />
+
     </div>
   );
 }
