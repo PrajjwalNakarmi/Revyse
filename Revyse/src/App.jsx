@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Analysis from "./pages/Analysis";
 import Profile from "./pages/Profile";
 import JobMatching from "./pages/JobMatching";
+import SavedJobs from "./pages/SavedJobs";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -40,11 +41,23 @@ function App() {
         }
       />
 
+      <Route
+        path="/job-matching"
+        element={
+          <ProtectedRoute>
+            <JobMatching />
+          </ProtectedRoute>
+        }
+      />
+
       <Route 
-        path="/job-matching" 
-        element={<JobMatching />
-          
-        } />
+        path="/saved-jobs" 
+        element={
+          <ProtectedRoute>
+            <SavedJobs />
+          </ProtectedRoute>
+        } 
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
