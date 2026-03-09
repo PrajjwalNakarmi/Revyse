@@ -12,7 +12,9 @@ export default function SavedJobs() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      const jobs = JSON.parse(localStorage.getItem(`savedJobs_${parsedUser.id}`)) || [];
+      const jobs =
+        JSON.parse(localStorage.getItem(`savedJobs_${parsedUser.id}`)) || [];
+
       setSavedJobs(jobs);
     }
   }, []);
@@ -22,7 +24,10 @@ export default function SavedJobs() {
 
     setSavedJobs(updated);
 
-    localStorage.setItem(`savedJobs_${user.id}`, JSON.stringify(updated));
+    localStorage.setItem(
+      `savedJobs_${user.id}`,
+      JSON.stringify(updated)
+    );
   };
 
   if (!user) {
@@ -77,7 +82,6 @@ export default function SavedJobs() {
                   {job.description}
                 </p>
 
-                {/* Skills */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {job.skills?.map((skill) => (
                     <span

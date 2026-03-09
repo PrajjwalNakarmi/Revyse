@@ -2,42 +2,50 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 
 export default function JobMatching() {
-  const [resume, setResume] = useState(null);
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const storedResume = localStorage.getItem("selectedResume");
+    const demoJobs = [
+      {
+        id: "1",
+        title: "Frontend Developer",
+        company: "Google",
+        description: "React developer role building modern web apps.",
+        skills: ["react", "javascript", "css"],
+        matchScore: 85,
+        applyLink: "https://careers.google.com"
+      },
+      {
+        id: "2",
+        title: "Backend Engineer",
+        company: "Amazon",
+        description: "Node.js backend developer role.",
+        skills: ["node.js", "mongodb", "express"],
+        matchScore: 72,
+        applyLink: "https://amazon.jobs"
+      }
+    ];
 
-    if (storedResume) {
-      const parsed = JSON.parse(storedResume);
-      setResume(parsed);
-      fetchJobMatches(parsed);
-    }
+    setJobs(demoJobs);
   }, []);
 
-  const fetchJobMatches = async (resumeData) => {
-    setLoading(true);
+  const saveJob = (job) => {
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    try {
-      const response = await fetch("http://localhost:5000/api/jobs/match", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resumeText: resumeData.extractedText,
-          skills: resumeData.skills,
-        }),
-      });
+    const key = `savedJobs_${user.id}`;
 
-      const data = await response.json();
-      setJobs(data.jobs || []);
-    } catch (err) {
-      console.error("Job match error:", err);
+    const existing = JSON.parse(localStorage.getItem(key)) || [];
+
+    if (existing.find((j) => j.id === job.id)) {
+      alert("Job already saved");
+      return;
     }
 
-    setLoading(false);
+    const updated = [...existing, job];
+
+    localStorage.setItem(key, JSON.stringify(updated));
+
+    alert("Job saved!");
   };
 
   return (
@@ -49,98 +57,71 @@ export default function JobMatching() {
           Job Matching
         </h1>
 
-        {!resume && (
-          <div className="bg-white p-8 rounded-xl shadow text-center text-gray-500">
-            Upload a resume first to see job matches.
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 gap-6">
+          {jobs.map((job) => (
+            <div
+              key={job.id}
+              className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {job.title}
+                  </h3>
 
-        {resume && (
-          <>
-            {/* Resume Info */}
-            <div className="bg-white p-6 rounded-xl shadow mb-8">
-              <h2 className="font-semibold text-gray-700 mb-2">
-                Resume Used
-              </h2>
+                  <p className="text-sm text-gray-500">
+                    {job.company}
+                  </p>
+                </div>
 
-              <p className="text-gray-800 font-medium">
-                {resume.fileName}
-              </p>
-
-              <p className="text-sm text-gray-500">
-                ATS Score: {resume.atsScore}%
-              </p>
-            </div>
-
-            {/* Job Results */}
-            {loading ? (
-              <div className="bg-white p-10 rounded-xl shadow text-center">
-                <p className="text-gray-500">Finding matching jobs...</p>
+                <span
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    job.matchScore > 80
+                      ? "bg-green-100 text-green-700"
+                      : job.matchScore > 60
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {job.matchScore}% Match
+                </span>
               </div>
-            ) : jobs.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-6">
-                {jobs.map((job, index) => (
-                  <div
-                    key={index}
-                    className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
+
+              <p className="text-sm text-gray-600 mb-4">
+                {job.description}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {job.skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {job.title}
-                        </h3>
-
-                        <p className="text-sm text-gray-500">
-                          {job.company}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`px-3 py-1 text-xs rounded-full ${
-                          job.matchScore > 80
-                            ? "bg-green-100 text-green-700"
-                            : job.matchScore > 60
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {job.matchScore}% Match
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                      {job.description}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {job.skills?.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-
-                    <a
-                      href={job.applyLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-2 text-sm font-medium text-indigo-600 hover:underline"
-                    >
-                      Apply Now →
-                    </a>
-                  </div>
+                    {skill}
+                  </span>
                 ))}
               </div>
-            ) : (
-              <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
-                No matching jobs found.
+
+              <div className="flex justify-between">
+                <a
+                  href={job.applyLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 text-sm font-medium hover:underline"
+                >
+                  Apply →
+                </a>
+
+                <button
+                  onClick={() => saveJob(job)}
+                  className="text-indigo-600 text-sm font-medium hover:underline"
+                >
+                  Save Job
+                </button>
               </div>
-            )}
-          </>
-        )}
+            </div>
+          ))}
+        </div>
       </main>
     </div>
   );
