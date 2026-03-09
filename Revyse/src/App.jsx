@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Analysis from "./pages/Analysis";
 import Profile from "./pages/Profile";
+import JobMatching from "./pages/JobMatching";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -38,6 +39,12 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route 
+        path="/job-matching" 
+        element={<JobMatching />
+          
+        } />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />

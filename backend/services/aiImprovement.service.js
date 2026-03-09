@@ -24,7 +24,7 @@ export async function generateAIImprovements(resumeText) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant", // ✅ ACTIVE GROQ MODEL
+        model: "llama-3.1-8b-instant", //  ACTIVE GROQ MODEL
         messages: [
           {
             role: "system",
