@@ -6,6 +6,7 @@ import Analysis from "./pages/Analysis";
 import Profile from "./pages/Profile";
 import JobMatching from "./pages/JobMatching";
 import SavedJobs from "./pages/SavedJobs";
+import ResumeBuilder from "./pages/ResumeBuilder";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -57,6 +58,15 @@ function App() {
             <SavedJobs />
           </ProtectedRoute>
         } 
+      />
+
+      <Route
+        path="/resume-builder"
+        element={
+          <ProtectedRoute>
+            <ResumeBuilder />
+          </ProtectedRoute>
+        }
       />
 
       {/* Fallback */}
