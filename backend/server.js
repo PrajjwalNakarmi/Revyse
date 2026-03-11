@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import ocrRoutes from "./routes/ocr.routes.js";
+import jobRoutes from "./routes/job.routes.js";
 
 dotenv.config();
 connectDB();
@@ -26,4 +27,6 @@ app.listen(process.env.PORT || 5000, () => {
 app.use("/api/ocr", ocrRoutes);
 console.log("GROQ_API_URL:", process.env.GROQ_API_URL);
 console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
+
+app.use("/api", jobRoutes);
 
