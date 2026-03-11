@@ -50,11 +50,27 @@ export default function Register() {
 
       const user = result.user;
 
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+
+      const existingUser = users.find(
+        (u) => u.email === user.email
+      );
+
+      if(existingUser){
+        setError("User already exists. Please login.");
+        return;
+      }
+
       const newUser = {
         id:user.uid,
         name:user.displayName,
-        email:user.email
+        email:user.email,
+        phone:""
       };
+
+      users.push(newUser);
+
+      localStorage.setItem("users", JSON.stringify(users));
 
       localStorage.setItem("user", JSON.stringify(newUser));
 
