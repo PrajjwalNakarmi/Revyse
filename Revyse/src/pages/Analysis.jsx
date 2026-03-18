@@ -164,9 +164,9 @@ export default function Analysis() {
 
         {/* AI Improvements */}
         <div className="bg-white p-6 rounded-xl shadow mb-10">
-          <h3 className="font-semibold text-gray-700 mb-5">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
             AI Improvement Suggestions
-          </h3>
+          </h1>
 
           {resume.aiImprovements && resume.aiImprovements.length > 0 ? (
             <div className="space-y-5">

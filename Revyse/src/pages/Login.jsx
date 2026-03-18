@@ -79,13 +79,13 @@ export default function Login() {
 
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
 
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl grid md:grid-cols-2 overflow-hidden">
+      <div className="w-full max-w-5xl bg-white/80 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-2xl grid md:grid-cols-2 overflow-hidden">
 
         {/* LEFT SIDE LOGIN FORM */}
 
         <div className="p-10 flex flex-col justify-center">
 
-          <h1 className="text-2xl font-bold text-indigo-600 mb-2">
+          <h1 className="text-2xl font-bold text-indigo-600 mb-1 tracking-tight">
             Revyse
           </h1>
 
@@ -99,53 +99,55 @@ export default function Login() {
 
 
           {error && (
-            <p className="text-red-500 text-sm mb-4">
+            <div className="mb-4 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               {error}
-            </p>
+            </div>
           )}
 
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
 
             <div>
-
-              <label className="text-sm text-gray-600">
+              <label className="text-sm text-gray-600 font-medium">
                 Email
               </label>
 
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full mt-1 px-4 py-2.5 border border-gray-200 rounded-lg 
+                focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+                outline-none transition duration-200 bg-white"
                 value={email}
                 onChange={(e)=>setEmail(e.target.value)}
                 required
               />
-
             </div>
 
 
             <div>
-
-              <label className="text-sm text-gray-600">
+              <label className="text-sm text-gray-600 font-medium">
                 Password
               </label>
 
               <input
                 type="password"
                 placeholder="Enter your password"
-                className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full mt-1 px-4 py-2.5 border border-gray-200 rounded-lg 
+                focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+                outline-none transition duration-200 bg-white"
                 value={password}
                 onChange={(e)=>setPassword(e.target.value)}
                 required
               />
-
             </div>
 
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold 
+              shadow-md hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98] 
+              transition duration-200"
             >
               Sign In
             </button>
@@ -154,21 +156,18 @@ export default function Login() {
 
 
           <div className="flex items-center my-6">
-
-            <div className="flex-1 border-t"></div>
-
-            <span className="px-3 text-sm text-gray-400">
-              OR
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-3 text-xs text-gray-400 font-medium">
+              OR CONTINUE WITH
             </span>
-
-            <div className="flex-1 border-t"></div>
-
+            <div className="flex-1 border-t border-gray-200"></div>
           </div>
 
 
           <button
             onClick={handleGoogleLogin}
-            className="w-full border flex items-center justify-center gap-3 py-2 rounded-lg hover:bg-gray-50 transition"
+            className="w-full border border-gray-200 flex items-center justify-center gap-3 py-2.5 
+            rounded-lg hover:bg-gray-50 hover:shadow-sm transition duration-200"
           >
 
             <img
@@ -177,28 +176,28 @@ export default function Login() {
               className="w-5 h-5"
             />
 
-            Continue with Google
+            <span className="text-sm font-medium text-gray-700">
+              Continue with Google
+            </span>
 
           </button>
 
 
           <p className="text-sm text-gray-500 mt-6 text-center">
-
             Don’t have an account?
 
             <Link
               to="/register"
-              className="text-indigo-600 font-semibold ml-1"
+              className="text-indigo-600 font-semibold ml-1 hover:underline"
             >
               Register
             </Link>
-
           </p>
 
         </div>
 
 
-        {/* RIGHT SIDE ILLUSTRATION */}
+        {/* RIGHT SIDE */}
 
         <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 p-10">
 
@@ -207,14 +206,14 @@ export default function Login() {
             <img
               src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
               alt="ai"
-              className="w-64 mx-auto mb-6"
+              className="w-64 mx-auto mb-6 drop-shadow-xl"
             />
 
             <h3 className="text-2xl font-bold mb-3">
               Smart Resume AI
             </h3>
 
-            <p className="text-indigo-100 text-sm max-w-sm mx-auto">
+            <p className="text-indigo-100 text-sm max-w-sm mx-auto leading-relaxed">
               Analyze your CV, improve ATS score and discover
               job opportunities tailored to your skills.
             </p>

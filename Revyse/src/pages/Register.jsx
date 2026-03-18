@@ -83,9 +83,9 @@ export default function Register() {
 
   return (
 
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
 
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-2xl grid md:grid-cols-2 overflow-hidden">
+      <div className="w-full max-w-5xl bg-white/80 backdrop-blur-lg border border-gray-100 shadow-2xl rounded-2xl grid md:grid-cols-2 overflow-hidden">
 
 
         {/* LEFT INFO PANEL */}
@@ -93,7 +93,7 @@ export default function Register() {
         <div className="hidden md:flex flex-col justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-12">
 
           <h1 className="text-3xl font-bold mb-6">
-            Join Revyse
+            Join Revyse 
           </h1>
 
           <p className="text-indigo-100 text-sm leading-relaxed mb-10">
@@ -104,7 +104,7 @@ export default function Register() {
           <div className="space-y-6">
 
             <div className="flex gap-4 items-start">
-              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm">
+              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm shadow">
                 1
               </div>
               <p className="text-sm text-indigo-100">
@@ -113,7 +113,7 @@ export default function Register() {
             </div>
 
             <div className="flex gap-4 items-start">
-              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm">
+              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm shadow">
                 2
               </div>
               <p className="text-sm text-indigo-100">
@@ -122,7 +122,7 @@ export default function Register() {
             </div>
 
             <div className="flex gap-4 items-start">
-              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm">
+              <div className="w-8 h-8 bg-white text-indigo-600 flex items-center justify-center rounded-full font-bold text-sm shadow">
                 3
               </div>
               <p className="text-sm text-indigo-100">
@@ -149,18 +149,20 @@ export default function Register() {
 
 
           {error && (
-            <p className="text-red-500 text-sm mb-4">
+            <div className="mb-4 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               {error}
-            </p>
+            </div>
           )}
 
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
 
             <input
               type="text"
               placeholder="Full Name"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+              focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+              outline-none transition duration-200"
               value={name}
               onChange={(e)=>setName(e.target.value)}
               required
@@ -169,7 +171,9 @@ export default function Register() {
             <input
               type="tel"
               placeholder="Phone Number"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+              focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+              outline-none transition duration-200"
               value={phone}
               onChange={(e)=>setPhone(e.target.value)}
               required
@@ -178,7 +182,9 @@ export default function Register() {
             <input
               type="email"
               placeholder="Email Address"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+              focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+              outline-none transition duration-200"
               value={email}
               onChange={(e)=>setEmail(e.target.value)}
               required
@@ -187,7 +193,9 @@ export default function Register() {
             <input
               type="password"
               placeholder="Password"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+              focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+              outline-none transition duration-200"
               value={password}
               onChange={(e)=>setPassword(e.target.value)}
               required
@@ -196,7 +204,9 @@ export default function Register() {
             <input
               type="password"
               placeholder="Confirm Password"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+              focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+              outline-none transition duration-200"
               value={confirmPassword}
               onChange={(e)=>setConfirmPassword(e.target.value)}
               required
@@ -205,7 +215,9 @@ export default function Register() {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold 
+              shadow-md hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98] 
+              transition duration-200"
             >
               Create Account
             </button>
@@ -215,20 +227,21 @@ export default function Register() {
 
           <div className="flex items-center my-6">
 
-            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className="flex-1 border-t border-gray-200"></div>
 
-            <span className="px-3 text-sm text-gray-400">
-              OR
+            <span className="px-3 text-xs text-gray-400 font-medium">
+              OR CONTINUE WITH
             </span>
 
-            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className="flex-1 border-t border-gray-200"></div>
 
           </div>
 
 
           <button
             onClick={handleGoogleRegister}
-            className="w-full border py-2 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 transition"
+            className="w-full border border-gray-200 py-2.5 rounded-lg flex items-center justify-center gap-3 
+            hover:bg-gray-50 hover:shadow-sm transition duration-200"
           >
 
             <img
@@ -237,7 +250,9 @@ export default function Register() {
               className="w-5 h-5"
             />
 
-            Continue with Google
+            <span className="text-sm font-medium text-gray-700">
+              Continue with Google
+            </span>
 
           </button>
 
@@ -248,7 +263,7 @@ export default function Register() {
 
             <Link
               to="/login"
-              className="text-indigo-600 font-semibold ml-1"
+              className="text-indigo-600 font-semibold ml-1 hover:underline"
             >
               Login
             </Link>
