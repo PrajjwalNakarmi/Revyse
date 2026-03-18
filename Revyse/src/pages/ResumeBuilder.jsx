@@ -16,7 +16,8 @@ export default function ResumeBuilder() {
     skills: "",
     experience: "",
     education: "",
-    projects: ""
+    projects: "",
+    certifications: ""
   });
 
   useEffect(() => {
@@ -28,32 +29,29 @@ export default function ResumeBuilder() {
 
       setResumeData(parsed);
 
-      setFormData((prev) => ({
-        ...prev,
-        skills: parsed.skills?.join("\n") || "",
+      setFormData({
+        name: parsed.fileName?.replace(".pdf", "") || "",
+        email: "",
+        phone: "",
+        linkedin: extractLinkedIn(text),
+
         summary: generateSummary(parsed.skills || []),
+        skills: parsed.skills?.join("\n") || "",
 
         experience:
           extractSection(text, ["experience", "work", "employment"]) ||
           text.split("\n").slice(0, 8).join("\n"),
 
-        education:
-          extractSection(text, ["education", "academic", "qualification"]),
-
-        projects:
-          extractSection(text, ["project", "projects"]),
-
-        linkedin: extractLinkedIn(text)
-      }));
+        education: extractEducation(text), // FIXED
+        projects: extractSection(text, ["project"]),
+        certifications: extractSection(text, ["certification"])
+      });
     }
   }, []);
 
   const generateSummary = (skills) => {
-    if (!skills || skills.length === 0) return "";
-
-    return `Motivated and detail-oriented professional skilled in ${skills.join(
-      ", "
-    )}. Passionate about building scalable and efficient solutions.`;
+    if (!skills.length) return "";
+    return `Motivated professional skilled in ${skills.join(", ")}.`;
   };
 
   const handleChange = (e) => {
@@ -63,89 +61,88 @@ export default function ResumeBuilder() {
     });
   };
 
-  const applyAISuggestions = () => {
-    if (!resumeData) return;
-
-    const text = resumeData.extractedText || "";
-
-    setFormData({
-      name: resumeData.fileName?.replace(".pdf", "") || "",
-      email: "",
-      phone: "",
-      linkedin: extractLinkedIn(text),
-      summary: generateSummary(resumeData.skills || []),
-      skills: resumeData.skills?.join("\n") || "",
-
-      experience:
-        extractSection(text, ["experience", "work", "employment"]) ||
-        text.split("\n").slice(0, 8).join("\n"),
-
-      education:
-        extractSection(text, ["education", "academic", "qualification"]),
-
-      projects:
-        extractSection(text, ["project", "projects"])
-    });
-
-    setIsAIEnhanced(false);
-  };
-
-  // ----------- SMART EXTRACTION -----------
-
+  // ---------- GENERIC SECTION ----------
   const extractSection = (text, keywords) => {
     if (!text) return "";
 
-    const lowerText = text.toLowerCase();
+    const lines = text.split("\n");
+    let startIndex = -1;
 
-    for (let key of keywords) {
-      const index = lowerText.indexOf(key);
-
-      if (index !== -1) {
-        const section = text.slice(index, index + 800);
-
-        return section
-          .replace(new RegExp(key, "i"), "")
-          .trim();
+    for (let i = 0; i < lines.length; i++) {
+      if (keywords.some(k => lines[i].toLowerCase().includes(k))) {
+        startIndex = i;
+        break;
       }
     }
 
-    return "";
+    if (startIndex === -1) return "";
+
+    const result = [];
+
+    for (let i = startIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (
+        line.match(/^(skills|projects|experience|certifications|tools)/i)
+      ) break;
+
+      if (line) result.push(line);
+    }
+
+    return result.join("\n");
+  };
+
+  // ---------- STRICT EDUCATION FIX ----------
+  const extractEducation = (text) => {
+    if (!text) return "";
+
+    const lines = text.split("\n");
+    let startIndex = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().includes("education")) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    if (startIndex === -1) return "";
+
+    const result = [];
+
+    for (let i = startIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (
+        line.match(/^(skills|projects|experience|certifications|tools)/i)
+      ) break;
+
+      // ONLY allow real education lines
+      if (
+        line.toLowerCase().includes("university") ||
+        line.toLowerCase().includes("college") ||
+        line.toLowerCase().includes("school") ||
+        line.toLowerCase().includes("bsc") ||
+        line.toLowerCase().includes("bachelor") ||
+        line.toLowerCase().includes("master") ||
+        line.match(/\d{4}/)
+      ) {
+        result.push(line);
+      }
+    }
+
+    return result.slice(0, 3).join("\n"); // keep only clean lines
   };
 
   const extractLinkedIn = (text) => {
-    const match = text.match(/https?:\/\/(www\.)?linkedin\.com\/[^\s]+/i);
+    const match = text.match(/linkedin\.com\/[^\s]+/i);
     return match ? match[0] : "";
   };
 
-  const cleanText = (text) => {
-    return text
-      ?.replace(/[-•*]\s*/g, "")
-      ?.replace(/\*\*/g, "")
-      ?.trim();
-  };
+  const formatList = (text) =>
+    text.split("\n").map(t => t.trim()).filter(Boolean);
 
-  // ----------- EXPERIENCE CLEANER -----------
-
-  const formatExperience = (text) => {
-    if (!text) return [];
-
-    return text
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) =>
-        line &&
-        line.length > 20 &&
-        !line.toLowerCase().includes("gmail") &&
-        !line.toLowerCase().includes("linkedin") &&
-        !line.toLowerCase().includes("github") &&
-        !line.match(/^\+?\d/) &&
-        !line.toLowerCase().includes("profile") &&
-        !line.toLowerCase().includes("curriculum vitae")
-      );
-  };
-
-  // ----------- AI -----------
-
+  // ---------- AI ----------
   const generateAIImprovedContent = async () => {
     if (!resumeData) return;
 
@@ -154,38 +151,26 @@ export default function ResumeBuilder() {
     try {
       const response = await fetch("http://localhost:5000/api/ai/generate-resume", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          text: resumeData.extractedText
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: resumeData.extractedText })
       });
 
       const data = await response.json();
       const output = data.content || "";
 
-      if (!output.includes("SUMMARY")) return;
+      const extract = (label) =>
+        output.match(new RegExp(`${label}:\\s*([\\s\\S]*?)(?=\\n[A-Z]+:|$)`))?.[1]?.trim();
 
-      const summary =
-        cleanText(output.match(/SUMMARY:\s*([\s\S]*?)SKILLS:/)?.[1]) || "";
-
-      const skills =
-        cleanText(output.match(/SKILLS:\s*([\s\S]*?)EXPERIENCE:/)?.[1]) || "";
-
-      const experience =
-        cleanText(output.match(/EXPERIENCE:\s*([\s\S]*?)EDUCATION:/)?.[1]) || "";
-
-      const education =
-        cleanText(output.match(/EDUCATION:\s*([\s\S]*?)PROJECTS:/)?.[1]) || "";
-
-      const projects =
-        cleanText(output.match(/PROJECTS:\s*([\s\S]*)/)?.[1]) || "";
+      const summary = extract("SUMMARY");
+      const skills = extract("SKILLS");
+      const experience = extract("EXPERIENCE");
+      const education = extract("EDUCATION");
+      const projects = extract("PROJECTS");
 
       setFormData((prev) => ({
         ...prev,
         summary: summary || prev.summary,
-        skills: skills || prev.skills,
+        skills: skills?.replace(/[-•*]\s*/g, "").replace(/,/g, "\n") || prev.skills,
         experience: experience || prev.experience,
         education: education || prev.education,
         projects: projects || prev.projects
@@ -193,8 +178,8 @@ export default function ResumeBuilder() {
 
       setIsAIEnhanced(true);
 
-    } catch (error) {
-      console.error("AI enhancement failed", error);
+    } catch (err) {
+      console.error("AI error", err);
       alert("AI failed");
     } finally {
       setIsLoadingAI(false);
@@ -212,58 +197,54 @@ export default function ResumeBuilder() {
 
       <main className="max-w-7xl mx-auto px-6 py-10">
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
+        <h1 className="text-3xl font-bold mb-8">
           Resume Builder
         </h1>
 
         <div className="grid md:grid-cols-2 gap-8">
 
-          {/* FORM */}
-          <div className="bg-white p-6 rounded-xl shadow">
+          <div className="bg-white p-6 rounded-xl shadow space-y-4">
 
-            <h2 className="font-semibold text-gray-700 mb-4">
-              Edit Resume Details
-            </h2>
+            <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" className="w-full border p-2 rounded" />
+            <input name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full border p-2 rounded" />
+            <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" className="w-full border p-2 rounded" />
+            <input name="linkedin" value={formData.linkedin} onChange={handleChange} placeholder="LinkedIn" className="w-full border p-2 rounded" />
 
-            <div className="space-y-4">
+            <textarea name="summary" value={formData.summary} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
+            <textarea name="skills" value={formData.skills} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
+            <textarea name="experience" value={formData.experience} onChange={handleChange} rows="4" className="w-full border p-2 rounded" />
+            <textarea name="projects" value={formData.projects} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
+            <textarea name="education" value={formData.education} onChange={handleChange} rows="3" className="w-full border p-2 rounded" />
 
-              <input name="name" placeholder="Full Name" className="w-full border p-2 rounded" value={formData.name} onChange={handleChange} />
-              <input name="email" placeholder="Email" className="w-full border p-2 rounded" value={formData.email} onChange={handleChange} />
-              <input name="phone" placeholder="Phone" className="w-full border p-2 rounded" value={formData.phone} onChange={handleChange} />
-              <input name="linkedin" placeholder="LinkedIn" className="w-full border p-2 rounded" value={formData.linkedin} onChange={handleChange} />
+            <div className="flex gap-3">
 
-              <textarea name="summary" rows="3" className="w-full border p-2 rounded" value={formData.summary} onChange={handleChange} />
-              <textarea name="skills" rows="3" className="w-full border p-2 rounded" value={formData.skills} onChange={handleChange} />
-              <textarea name="experience" rows="4" className="w-full border p-2 rounded" value={formData.experience} onChange={handleChange} />
-              <textarea name="projects" rows="3" className="w-full border p-2 rounded" value={formData.projects} onChange={handleChange} />
-              <textarea name="education" rows="3" className="w-full border p-2 rounded" value={formData.education} onChange={handleChange} />
+              <button
+                onClick={generateAIImprovedContent}
+                className="bg-green-600 text-white px-4 py-2 rounded"
+              >
+                {isLoadingAI ? "Improving..." : "Enhance with AI"}
+              </button>
 
-              <div className="flex gap-3 flex-wrap">
-
-                <button onClick={applyAISuggestions} className="bg-gray-600 text-white px-4 py-2 rounded">
-                  Reset
-                </button>
-
-                <button
-                  onClick={generateAIImprovedContent}
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  {isLoadingAI ? "Improving..." : "Enhance with AI"}
-                </button>
-
-                <button onClick={downloadPDF} className="bg-indigo-600 text-white px-4 py-2 rounded">
-                  Download PDF
-                </button>
-
-              </div>
+              <button
+                onClick={downloadPDF}
+                className="bg-indigo-600 text-white px-4 py-2 rounded"
+              >
+                Download PDF
+              </button>
 
             </div>
+
           </div>
 
-          {/* PREVIEW */}
           <div className="bg-white p-6 rounded-xl shadow">
 
-            <div id="resume-preview" className="p-6 border rounded space-y-4">
+            {isAIEnhanced && (
+              <div className="text-green-600 text-sm mb-2">
+                AI Enhanced
+              </div>
+            )}
+
+            <div id="resume-preview" className="space-y-4">
 
               <h1 className="text-2xl font-bold">{formData.name}</h1>
 
@@ -275,62 +256,44 @@ export default function ResumeBuilder() {
                 <p className="text-sm text-blue-600">{formData.linkedin}</p>
               )}
 
-              {formData.summary && (
-                <div>
-                  <h3 className="font-semibold border-b pb-1">Summary</h3>
-                  <p className="text-sm mt-2">{formData.summary}</p>
-                </div>
-              )}
-
-              {formData.skills && (
-                <div>
-                  <h3 className="font-semibold border-b pb-1">Skills</h3>
-                  <ul className="list-disc ml-5 text-sm mt-2">
-                    {formData.skills.split("\n").filter(Boolean).map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {formData.experience && (
-                <div>
-                  <h3 className="font-semibold border-b pb-1">Experience</h3>
-                  <ul className="list-disc ml-5 text-sm mt-2">
-                    {formatExperience(formData.experience).map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {formData.projects && (
-                <div>
-                  <h3 className="font-semibold border-b pb-1">Projects</h3>
-                  <ul className="list-disc ml-5 text-sm mt-2">
-                    {formData.projects.split("\n").filter(Boolean).map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {formData.education && (
-                <div>
-                  <h3 className="font-semibold border-b pb-1">Education</h3>
-                  <ul className="list-disc ml-5 text-sm mt-2">
-                    {formData.education.split("\n").filter(Boolean).map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <Section title="Summary" content={formData.summary} />
+              <SectionList title="Skills" data={formatList(formData.skills)} />
+              <SectionList title="Experience" data={formatList(formData.experience)} />
+              <SectionList title="Projects" data={formatList(formData.projects)} />
+              <SectionList title="Education" data={formatList(formData.education)} />
+              <SectionList title="Certifications" data={formatList(formData.certifications)} />
 
             </div>
           </div>
 
         </div>
       </main>
+    </div>
+  );
+}
+
+function Section({ title, content }) {
+  if (!content) return null;
+
+  return (
+    <div>
+      <h3 className="font-semibold border-b pb-1">{title}</h3>
+      <p className="text-sm mt-2">{content}</p>
+    </div>
+  );
+}
+
+function SectionList({ title, data }) {
+  if (!data.length) return null;
+
+  return (
+    <div>
+      <h3 className="font-semibold border-b pb-1">{title}</h3>
+      <ul className="list-disc ml-5 text-sm mt-2 space-y-1">
+        {data.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }
