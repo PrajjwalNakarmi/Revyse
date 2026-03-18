@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import ocrRoutes from "./routes/ocr.routes.js";
 import jobRoutes from "./routes/job.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 
 dotenv.config();
 connectDB();
@@ -30,3 +31,4 @@ console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
 
 app.use("/api", jobRoutes);
 
+app.use("/api/ai", aiRoutes);
