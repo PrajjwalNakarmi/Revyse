@@ -35,15 +35,28 @@ export default function Dashboard() {
     setResumes(userResumes);
     setStats(getUserStats(user.id));
 
-    // Clear selected resume if user has no resumes
     if (!userResumes || userResumes.length === 0) {
       localStorage.removeItem("selectedResume");
     }
-
   }, [user]);
 
+  // ✅ UPDATED FUNCTION (PDF + IMAGE SUPPORT)
   const handleFileUpload = async (file) => {
     if (!user) return;
+
+    // -------- FILE TYPE VALIDATION --------
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp"
+    ];
+
+    if (!file || !allowedTypes.includes(file.type)) {
+      alert("Only PDF and image files (JPG, PNG) are allowed");
+      return;
+    }
 
     setIsUploading(true);
 
@@ -93,7 +106,6 @@ export default function Dashboard() {
     setResumes(updatedResumes);
     setStats(getUserStats(user.id));
 
-    // Clear selected resume if none remain
     if (!updatedResumes || updatedResumes.length === 0) {
       localStorage.removeItem("selectedResume");
     }
@@ -123,6 +135,7 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
           <div className="bg-white p-6 rounded-xl shadow">
@@ -148,6 +161,7 @@ export default function Dashboard() {
 
         </div>
 
+        {/* RESUMES */}
         <div>
 
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
@@ -189,15 +203,12 @@ export default function Dashboard() {
                   <div className="flex items-center gap-6">
 
                     <div className="text-right">
-
                       <p className="text-sm font-semibold text-gray-800">
                         Score: {resume.score}/100
                       </p>
-
                       <p className="text-sm text-gray-500">
                         ATS: {resume.atsScore}%
                       </p>
-
                     </div>
 
                     <button
@@ -232,6 +243,7 @@ export default function Dashboard() {
 
       </main>
 
+      {/* UPLOAD MODAL */}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}

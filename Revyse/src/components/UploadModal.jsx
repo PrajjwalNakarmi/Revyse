@@ -19,14 +19,20 @@ export default function UploadModal({
 
   if (!isOpen) return null;
 
+  // ✅ UPDATED VALIDATION (PDF + IMAGE)
   const handleFileSelect = (file) => {
     if (!file) return;
 
-    const allowedExtensions = ["pdf", "doc", "docx", "txt"];
-    const extension = file.name.split(".").pop().toLowerCase();
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
 
-    if (!allowedExtensions.includes(extension)) {
-      alert("Please upload a PDF, DOC, DOCX, or TXT file");
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload a PDF or Image (JPG, PNG)");
       return;
     }
 
@@ -48,6 +54,7 @@ export default function UploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+
       {/* Backdrop */}
       <div
         className="absolute inset-0"
@@ -57,9 +64,8 @@ export default function UploadModal({
       />
 
       {/* Modal */}
-      <div
-        className="relative bg-white w-full max-w-md rounded-xl shadow-lg p-6"
-      >
+      <div className="relative bg-white w-full max-w-md rounded-xl shadow-lg p-6">
+
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -104,15 +110,20 @@ export default function UploadModal({
               or click to browse
             </p>
 
+            {/* ✅ UPDATED INPUT */}
             <input
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept=".pdf,.doc,.docx,.txt"
+              accept=".pdf,image/*"
               onChange={(e) =>
                 handleFileSelect(e.target.files?.[0])
               }
             />
+
+            <p className="text-xs text-gray-400 mt-3">
+              Supported: PDF, JPG, PNG
+            </p>
           </div>
         ) : (
           <div className="border rounded-lg p-4 flex justify-between items-center">
@@ -143,6 +154,7 @@ export default function UploadModal({
           >
             Cancel
           </button>
+
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
@@ -155,6 +167,7 @@ export default function UploadModal({
             {isUploading ? "Analyzing..." : "Upload Resume"}
           </button>
         </div>
+
       </div>
     </div>
   );
