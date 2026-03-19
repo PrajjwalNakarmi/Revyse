@@ -8,13 +8,16 @@ export async function searchJobsBySkills(skills) {
 
     const data = await response.json();
 
-    if (!data.data) return [];
+    //  FIX: support both formats (jobs OR data)
+    const jobList = data.jobs || data.data || [];
+
+    if (!jobList.length) return [];
 
     const resumeSkills = skills.map((skill) =>
       skill.toLowerCase().trim()
     );
 
-    const jobs = data.data.map((job) => {
+    const jobs = jobList.map((job, index) => {
       const description = job.description || "";
 
       const cleanDescription = description
@@ -33,9 +36,10 @@ export async function searchJobsBySkills(skills) {
             );
 
       return {
-        id: job.slug || Math.random().toString(),
+        id: job.slug || job.url || index,
         title: job.title || "Job Title",
-        company: job.company_name || "Company",
+        company: job.company_name || job.company || "Company",
+        location: job.location || "Remote",
         description:
           cleanDescription.slice(0, 200) + "...",
         applyLink: job.url || "#",
@@ -44,9 +48,8 @@ export async function searchJobsBySkills(skills) {
       };
     });
 
-    return jobs
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 12);
+    //  DO NOT remove jobs — just sort
+    return jobs.sort((a, b) => b.matchScore - a.matchScore);
 
   } catch (error) {
     console.error("Job API error:", error);

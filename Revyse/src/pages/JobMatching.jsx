@@ -17,9 +17,26 @@ export default function JobMatching() {
     }
 
     async function loadJobs() {
-      const results = await searchJobsBySkills(resume.skills);
-      setJobs(results);
-      setLoading(false);
+      try {
+        const results = await searchJobsBySkills(resume.skills);
+
+        // ✅ FIX: handle BOTH array and object
+        const jobList = Array.isArray(results)
+          ? results
+          : results?.jobs || [];
+
+        if (!jobList.length) {
+          console.warn("No jobs returned from API");
+        }
+
+        // 🔥 NO NEED TO RE-CALCULATE MATCH AGAIN (already done in service)
+        setJobs(jobList);
+
+      } catch (error) {
+        console.error("Job loading failed", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadJobs();
@@ -54,44 +71,51 @@ export default function JobMatching() {
         </h1>
 
         {loading && (
-          <p className="text-gray-500">Searching jobs...</p>
+          <p className="text-gray-500">Loading jobs...</p>
         )}
 
         {noResume && (
           <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
-            No resume found. Upload or select a resume to see job matches.
+            No resume found. Upload or select a resume first.
           </div>
         )}
 
         {!loading && !noResume && jobs.length === 0 && (
           <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
-            No jobs found based on your resume skills.
+            No jobs available right now. Try again later.
           </div>
         )}
 
-        {!noResume && (
+        {!noResume && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 gap-6">
+
             {jobs.map((job) => (
               <div
                 key={job.id}
                 className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
               >
+
                 <div className="flex justify-between items-start mb-4">
+
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800">
-                      {job.title || "Job Title"}
+                      {job.title}
                     </h3>
 
                     <p className="text-sm text-gray-500">
-                      {job.company || "Company"}
+                      {job.company}
+                    </p>
+
+                    <p className="text-xs text-gray-400">
+                      {job.location}
                     </p>
                   </div>
 
                   <span
                     className={`px-3 py-1 text-xs rounded-full ${
-                      job.matchScore >= 80
+                      job.matchScore >= 70
                         ? "bg-green-100 text-green-700"
-                        : job.matchScore >= 60
+                        : job.matchScore >= 40
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-red-100 text-red-700"
                     }`}
@@ -100,24 +124,12 @@ export default function JobMatching() {
                   </span>
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4">
-                  {job.description || "No description available."}
+                <p className="text-sm text-gray-600 mb-4 line-clamp-4">
+                  {job.description}
                 </p>
 
-                {job.skills && job.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {job.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 <div className="flex justify-between">
+
                   <a
                     href={job.applyLink}
                     target="_blank"
@@ -133,9 +145,12 @@ export default function JobMatching() {
                   >
                     Save Job
                   </button>
+
                 </div>
+
               </div>
             ))}
+
           </div>
         )}
 

@@ -29,6 +29,6 @@ app.use("/api/ocr", ocrRoutes);
 console.log("GROQ_API_URL:", process.env.GROQ_API_URL);
 console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
 
-app.use("/api", jobRoutes);
+app.use("/api/jobs", jobRoutes);
 
 app.use("/api/ai", aiRoutes);
