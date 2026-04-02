@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5000/api/ocr/upload";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_URL = `${API_BASE_URL}/api/ocr/upload`;
 
 export async function uploadResumeForOCR(file) {
   try {
@@ -40,10 +41,7 @@ export async function uploadResumeForOCR(file) {
     return {
       fileName: data.fileName || file.name,
 
-      // fallback so app never crashes
-      extractedText:
-        extractedText ||
-        "Text extraction was limited. Try uploading a clearer image or PDF.",
+      extractedText,
 
       atsScore: data.atsScore ?? 0,
       method: data.method || (file.type.startsWith("image/") ? "image-ocr" : "pdf"),
@@ -51,23 +49,14 @@ export async function uploadResumeForOCR(file) {
       skills: data.skills || [],
       aiImprovements: data.aiImprovements || [],
 
-      // extra flag (useful if you want UI warning later)
       isWeakExtraction,
     };
 
   } catch (error) {
     console.error("OCR Service Error:", error.message);
-
-    // return fallback instead of breaking app
-    return {
-      fileName: file.name,
-      extractedText:
-        "Failed to extract text from the file. Please try a clearer resume.",
-      atsScore: 0,
-      method: "error",
-      skills: [],
-      aiImprovements: [],
-      isWeakExtraction: true,
-    };
+    if (error instanceof TypeError) {
+      throw new Error("Cannot connect to OCR server. Start backend on port 5000 and try again.");
+    }
+    throw error;
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import AppFooter from "../components/AppFooter";
 
 export default function Analysis() {
   const [resume, setResume] = useState(null);
@@ -28,58 +29,75 @@ export default function Analysis() {
   // If no resume uploaded
   if (!resume) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen flex flex-col bg-[#f5f4ef] text-slate-900">
         <Navbar />
 
-        <div className="flex justify-center items-center h-[60vh]">
-          <div className="bg-white p-8 rounded-xl shadow text-center">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">
+        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-6 py-16">
+          <div className="glass-card w-full max-w-lg rounded-3xl p-10 text-center">
+            <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0f2a34] text-[#ffd4a8]">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M7 4h8l4 4v12H7z" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M15 4v4h4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">
               No Resume Uploaded
             </h2>
 
-            <p className="text-gray-500 mb-4">
+            <p className="text-slate-600 mb-5">
               Please upload a resume from the dashboard to view analysis.
             </p>
 
             <button
               onClick={() => navigate("/dashboard")}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+              className="rounded-full bg-[#0f2a34] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#15424b]"
             >
               Go to Dashboard
             </button>
           </div>
-        </div>
+        </main>
+
+        <AppFooter className="mt-auto" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen flex flex-col bg-[#f5f4ef] text-slate-900">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          Resume Analysis
-        </h1>
+      <main className="max-w-7xl mx-auto w-full flex-1 px-6 py-10">
+        <section className="mb-8 overflow-hidden rounded-3xl border border-[#1f5d66]/15 bg-gradient-to-r from-[#0f2a34] via-[#15424b] to-[#1f5d66] px-6 py-8 text-white shadow-[0_24px_80px_-40px_rgba(15,42,52,0.65)] sm:px-8">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#ffd4a8]">
+            <span className="inline-flex h-2 w-2 rounded-full bg-[#f28f3b]" />
+            Revyse Analysis
+          </p>
+          <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+            Resume analysis overview
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
+            Review your ATS readiness, extracted skills, and AI-driven recommendations in one workspace.
+          </p>
+        </section>
 
         {/* Scores */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold text-gray-700 mb-2">
+          <div className="glass-card rounded-2xl p-6">
+            <h3 className="font-semibold text-slate-700 mb-2">
               Overall Score
             </h3>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-5xl font-bold text-gray-800">
+              <span className="text-5xl font-bold text-slate-900">
                 {resume.score ?? resume.atsScore ?? 0}
               </span>
-              <span className="text-xl text-gray-400">/100</span>
+              <span className="text-xl text-slate-400">/100</span>
             </div>
 
-            <div className="w-full h-2 bg-gray-200 rounded">
+            <div className="w-full h-2 bg-[#dce6e8] rounded-full">
               <div
-                className="h-2 bg-indigo-500 rounded"
+                className="h-2 rounded-full bg-[#1f5d66]"
                 style={{
                   width: `${resume.score ?? resume.atsScore ?? 0}%`
                 }}
@@ -87,21 +105,21 @@ export default function Analysis() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold text-gray-700 mb-2">
+          <div className="glass-card rounded-2xl p-6">
+            <h3 className="font-semibold text-slate-700 mb-2">
               ATS Compatibility
             </h3>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-5xl font-bold text-gray-800">
+              <span className="text-5xl font-bold text-slate-900">
                 {resume.atsScore ?? 0}
               </span>
-              <span className="text-xl text-gray-400">%</span>
+              <span className="text-xl text-slate-400">%</span>
             </div>
 
-            <div className="w-full h-2 bg-gray-200 rounded">
+            <div className="w-full h-2 bg-[#dce6e8] rounded-full">
               <div
-                className="h-2 bg-green-500 rounded"
+                className="h-2 rounded-full bg-[#f28f3b]"
                 style={{ width: `${resume.atsScore ?? 0}%` }}
               />
             </div>
@@ -112,23 +130,23 @@ export default function Analysis() {
         {/* Extracted Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold text-gray-700 mb-4">
+          <div className="glass-card rounded-2xl p-6">
+            <h3 className="font-semibold text-slate-700 mb-4">
               Extracted Information
             </h3>
 
             <div className="space-y-3 text-sm">
 
               <div className="flex justify-between">
-                <span className="text-gray-500">File Name</span>
-                <span className="font-medium text-gray-800">
+                <span className="text-slate-500">File Name</span>
+                <span className="font-medium text-slate-800">
                   {resume.fileName}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-500">Extraction Method</span>
-                <span className="font-medium text-gray-800">
+                <span className="text-slate-500">Extraction Method</span>
+                <span className="font-medium text-slate-800">
                   {resume.method}
                 </span>
               </div>
@@ -137,8 +155,8 @@ export default function Analysis() {
           </div>
 
           {/* Skills */}
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold text-gray-700 mb-4">
+          <div className="glass-card rounded-2xl p-6">
+            <h3 className="font-semibold text-slate-700 mb-4">
               Detected Skills
             </h3>
 
@@ -147,14 +165,14 @@ export default function Analysis() {
                 {resume.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full"
+                    className="rounded-full bg-[#e1f0f2] px-3 py-1 text-sm font-medium text-[#11414a]"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 No skills detected
               </p>
             )}
@@ -163,10 +181,10 @@ export default function Analysis() {
         </div>
 
         {/* AI Improvements */}
-        <div className="bg-white p-6 rounded-xl shadow mb-10">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+        <div className="glass-card mb-10 rounded-2xl p-6">
+          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-6">
             AI Improvement Suggestions
-          </h1>
+          </h2>
 
           {resume.aiImprovements && resume.aiImprovements.length > 0 ? (
             <div className="space-y-5">
@@ -189,7 +207,7 @@ export default function Analysis() {
                     return (
                       <h4
                         key={`heading-${index}`}
-                        className="text-gray-800 font-semibold text-sm uppercase tracking-wide mt-4"
+                        className="mt-4 text-sm font-semibold uppercase tracking-wide text-slate-800"
                       >
                         {cleanItem.replace(/[:*]/g, "")}
                       </h4>
@@ -201,13 +219,13 @@ export default function Analysis() {
                   return (
                     <div
                       key={`point-${index}`}
-                      className="flex gap-4 items-start border-l-4 border-indigo-500 bg-indigo-50/40 p-4 rounded-md"
+                      className="flex items-start gap-4 rounded-xl border border-[#1f5d66]/15 bg-[#eef5f6] p-4"
                     >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0f2a34] text-sm font-semibold text-[#ffd4a8]">
                         {counter++}
                       </div>
 
-                      <p className="text-sm text-gray-700 leading-relaxed">
+                      <p className="text-sm leading-relaxed text-slate-700">
                         {cleanItem}
                       </p>
                     </div>
@@ -217,24 +235,26 @@ export default function Analysis() {
 
             </div>
           ) : (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               No AI suggestions available
             </p>
           )}
         </div>
 
         {/* OCR Text */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="font-semibold text-gray-700 mb-4">
+        <div className="glass-card rounded-2xl p-6">
+          <h3 className="mb-4 font-semibold text-slate-700">
             Extracted Resume Text
           </h3>
 
-          <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed max-h-[500px] overflow-y-auto">
+          <pre className="max-h-[500px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-[#1f5d66]/10 bg-white/70 p-4 text-sm leading-relaxed text-slate-700">
             {resume.extractedText || "No text extracted."}
           </pre>
         </div>
 
       </main>
+
+      <AppFooter className="mt-auto" />
     </div>
   );
 }

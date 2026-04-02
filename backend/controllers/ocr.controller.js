@@ -33,7 +33,7 @@ export const extractText = async (req, res) => {
       method = "pdf-to-image-ocr";
     }
 
-    if ([".png", ".jpg", ".jpeg"].includes(ext)) {
+    if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
       const ocr = await Tesseract.recognize(filePath, "eng");
       extractedText = ocr.data.text;
       method = "image-ocr";
