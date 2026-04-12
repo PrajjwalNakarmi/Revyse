@@ -5,6 +5,7 @@ import { pdfToImages } from "../utils/pdfToImages.js";
 import { calculateATSScore } from "../utils/atsScorer.js";
 import { generateAIImprovements } from "../services/aiImprovement.service.js";
 import { extractSkillsFromText } from "../utils/skillsExtractor.js";
+import CV from "../models/CV.js";
 
 export const extractText = async (req, res) => {
   try {
@@ -48,6 +49,20 @@ export const extractText = async (req, res) => {
     const atsScore = calculateATSScore(extractedText);
     const skills = extractSkillsFromText(extractedText);
     const aiImprovements = await generateAIImprovements(extractedText);
+
+    // Save OCR result so admin CV feed can display near real-time uploads.
+    try {
+      await CV.create({
+        user_id: req.user?._id,
+        file_name: req.file.originalname,
+        file_path: filePath,
+        extracted_text: extractedText,
+        summary: extractedText.slice(0, 280),
+        analysis_date: new Date(),
+      });
+    } catch (saveErr) {
+      console.error("CV save warning:", saveErr.message);
+    }
 
     fs.unlinkSync(filePath);
 

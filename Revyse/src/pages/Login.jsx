@@ -144,14 +144,14 @@ export default function Login() {
           </ul>
         </section>
 
-        <section className="p-8 sm:p-10 lg:p-12 text-slate-100">
+        <section className="bg-[#f8fbfc] p-8 text-slate-800 sm:p-10 lg:p-12">
           <div className="mb-7">
             <p className="inline-flex items-center gap-2 rounded-full bg-[#edf6f7] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f5d66]">
               <span className="h-2 w-2 rounded-full bg-[#f28f3b]" />
               Secure Login
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-slate-900">Sign in to Revyse</h2>
-            <p className="mt-4 text-sm text-slate-300">Use your email account or continue with Google.</p>
+            <p className="mt-4 text-sm text-slate-600">Use your email account or continue with Google.</p>
           </div>
 
           {error && (
@@ -161,7 +161,7 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="block text-sm font-medium text-slate-200">
+            <label className="block text-sm font-medium text-slate-700">
               Email address
               <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-within:border-[#1f5d66] focus-within:ring-2 focus-within:ring-[#1f5d66]/15">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2">
@@ -179,7 +179,7 @@ export default function Login() {
               </div>
             </label>
 
-            <label className="block text-sm font-medium text-slate-200">
+            <label className="block text-sm font-medium text-slate-700">
               Password
               <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-within:border-[#1f5d66] focus-within:ring-2 focus-within:ring-[#1f5d66]/15">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2">

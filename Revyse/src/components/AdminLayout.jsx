@@ -1,52 +1,56 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout() {
+  const location = useLocation();
+
+  const headingMap = {
+    "/admin": "Dashboard",
+    "/admin/users": "Users",
+    "/admin/cv": "CV Review",
+    "/admin/jobs": "Job Integrations",
+    "/admin/logs": "System Logs",
+  };
+
+  const currentHeading = headingMap[location.pathname] || "Admin";
+
   return (
-    <div className="relative min-h-screen bg-[#f6f4ef] text-slate-900">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,rgba(15,118,110,0.18),transparent_22%),radial-gradient(circle_at_90%_0%,rgba(255,138,76,0.16),transparent_28%),linear-gradient(180deg,#f6f4ef_0%,#ede6dc_100%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[#f3f7fb] text-slate-900">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,rgba(15,118,110,0.16),transparent_26%),radial-gradient(circle_at_90%_0%,rgba(59,130,246,0.14),transparent_30%),linear-gradient(180deg,#f3f7fb_0%,#eaf1f7_60%,#e6eef6_100%)]" />
 
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-6 py-6 lg:flex-row lg:px-8">
-
-        <aside className="hidden shrink-0 lg:block lg:w-72">
-          <div className="glass-card flex h-full min-h-[calc(100vh-72px)] flex-col justify-between gap-6 rounded-[32px] border border-slate-200/70 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-[#0f766e]">Revyse Admin</p>
-                <h2 className="mt-3 text-3xl font-semibold text-slate-950">Control center</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Manage users, CV uploads, job sources, and platform health in one place.</p>
-              </div>
-              <AdminSidebar />
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200/70 bg-slate-50 p-4 text-sm text-slate-700 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-              <p className="font-semibold text-slate-900">Quick insight</p>
-              <p className="mt-2 text-slate-600">Use the left menu to switch between overview, users, CVs, jobs and logs.</p>
-            </div>
+      <div className="mx-auto flex h-screen max-w-[1650px] gap-4 p-4 lg:p-6">
+        <aside className="hidden w-72 shrink-0 lg:block">
+          <div className="h-full rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+            <AdminSidebar />
           </div>
         </aside>
 
-        <main className="flex-1">
-          <div className="glass-card mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-[#0f766e]">Administrator</p>
-              <h1 className="mt-3 text-3xl font-semibold text-slate-950">Admin dashboard</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Monitor platform performance, manage users, and keep the Revyse experience running smoothly.</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button className="rounded-full bg-[#0f766e] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(15,118,110,0.22)] transition hover:bg-[#0d6b5a]">
-                New report
-              </button>
-              <button className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
-                Export data
-              </button>
+        <main className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.1)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-teal-700">Revyse Admin</p>
+                <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">{currentHeading}</h1>
+                <p className="mt-2 text-sm text-slate-600">Strict monitoring workspace for users, resumes, integrations, and logs.</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <span className="rounded-full border border-teal-400/40 bg-teal-500/10 px-3 py-1.5 font-semibold text-teal-700">Live</span>
+                <span className="rounded-full border border-slate-300 bg-white px-3 py-1.5">Updated now</span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <Outlet />
+          <div className="lg:hidden">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-3 shadow-[0_20px_50px_rgba(15,23,42,0.1)]">
+              <AdminSidebar mobile />
+            </div>
           </div>
+
+          <section className="min-h-0 flex-1 overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.1)] sm:p-5">
+            <div className="h-full overflow-y-auto pr-1">
+              <Outlet />
+            </div>
+          </section>
         </main>
       </div>
     </div>

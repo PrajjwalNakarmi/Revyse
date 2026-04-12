@@ -1,31 +1,55 @@
+import { useEffect, useState } from "react";
 import { FaExclamationTriangle, FaCheckCircle, FaBell } from "react-icons/fa";
-
-const logs = [
-  { time: "10:45 AM", message: "Job API returned slow response", level: "Warning" },
-  { time: "09:20 AM", message: "New user signup approved", level: "Info" },
-  { time: "08:15 AM", message: "AI service heartbeat received", level: "Success" },
-];
+import { fetchAdminLogs } from "../../services/adminService";
 
 export default function AdminLogs() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await fetchAdminLogs();
+      setLogs(data);
+    } catch (err) {
+      setError(err.message || "Failed to load logs");
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+    const timer = setInterval(loadLogs, 8000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="space-y-8">
-      <div className="glass-card rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+    <div className="grid h-full content-start gap-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-[#0f766e]">System logs</p>
-            <h1 className="mt-3 text-3xl font-semibold text-slate-950">Platform activity feed</h1>
+            <p className="text-xs uppercase tracking-[0.24em] text-teal-700">System logs</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900">Platform activity feed</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">Review the latest events, warnings, and health signals coming from the backend services.</p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
+          <button
+            onClick={loadLogs}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
             <FaBell /> Refresh logs
           </button>
         </div>
       </div>
 
-      <div className="glass-card rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-slate-50">
+      <div className="min-h-0 rounded-2xl border border-slate-200 bg-white p-5">
+        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        <div className="max-h-[56vh] overflow-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm text-slate-700">
-            <thead className="bg-slate-100 text-slate-500">
+            <thead className="sticky top-0 bg-slate-100 text-slate-500">
               <tr>
                 <th className="px-4 py-4">Time</th>
                 <th className="px-4 py-4">Message</th>
@@ -33,8 +57,18 @@ export default function AdminLogs() {
               </tr>
             </thead>
             <tbody>
+              {loading && (
+                <tr className="border-t border-slate-200">
+                  <td className="px-4 py-4 text-slate-500" colSpan={3}>Loading logs...</td>
+                </tr>
+              )}
+              {!loading && logs.length === 0 && (
+                <tr className="border-t border-slate-200">
+                  <td className="px-4 py-4 text-slate-500" colSpan={3}>No logs available</td>
+                </tr>
+              )}
               {logs.map((entry) => (
-                <tr key={entry.time} className="border-t border-slate-200">
+                <tr key={entry.id || `${entry.time}-${entry.message}`} className="border-t border-slate-200">
                   <td className="px-4 py-4 font-medium text-slate-900">{entry.time}</td>
                   <td className="px-4 py-4 text-slate-600">{entry.message}</td>
                   <td className="px-4 py-4">
