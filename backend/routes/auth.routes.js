@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
-// Protected route (TEST)
+// IMPORTANT: DO NOT USE protect()
 router.get("/profile", protect, (req, res) => {
   res.json({
     message: "Access granted",
