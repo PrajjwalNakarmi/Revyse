@@ -17,6 +17,32 @@ export default function JobMatching() {
       return;
     }
 
+    const calculateMatchScore = (job, userSkills) => {
+      const jobText = (
+        (job.job_title || job.title || "") +
+        " " +
+        (job.description || job.job_description || "")
+      ).toLowerCase();
+
+      let matches = 0;
+
+      userSkills.forEach((skill) => {
+        if (jobText.includes(skill.toLowerCase())) {
+          matches++;
+        }
+      });
+
+      let score = Math.round((matches / userSkills.length) * 100);
+
+      // boost important skills
+      const prioritySkills = ["python", "sql", "data", "machine learning"];
+      if (prioritySkills.some((skill) => jobText.includes(skill))) {
+        score += 15;
+      }
+
+      return Math.min(score, 100);
+    };
+
     async function loadJobs() {
       try {
         const results = await searchJobsBySkills(resume.skills);
@@ -25,7 +51,21 @@ export default function JobMatching() {
           ? results
           : results?.jobs || [];
 
-        setJobs(jobList);
+        const userSkills = resume.skills.map((s) => s.toLowerCase());
+
+        const filteredJobs = jobList
+          .map((job) => {
+            const score = calculateMatchScore(job, userSkills);
+
+            return {
+              ...job,
+              matchScore: score,
+            };
+          })
+          .filter((job) => job.matchScore >= 30)
+          .sort((a, b) => b.matchScore - a.matchScore);
+
+        setJobs(filteredJobs);
       } catch (error) {
         console.error("Job loading failed", error);
       } finally {
@@ -36,7 +76,6 @@ export default function JobMatching() {
     loadJobs();
   }, []);
 
-  // SAVE JOB
   const saveJob = async (job) => {
     try {
       const token = localStorage.getItem("token");
@@ -58,7 +97,7 @@ export default function JobMatching() {
           company: job.company_name || job.company,
           description: job.job_description || job.description,
           apply_link: job.apply_link || job.url,
-          match_score: job.match_score || job.matchScore || 0,
+          match_score: job.matchScore || 0,
           skills: job.skills || [],
         }),
       });
@@ -109,7 +148,7 @@ export default function JobMatching() {
 
         {!loading && !noResume && jobs.length === 0 && (
           <div className="glass-card rounded-2xl p-10 text-center text-slate-600">
-            No jobs available right now. Try again later.
+            No relevant jobs found for your skills.
           </div>
         )}
 
@@ -117,13 +156,12 @@ export default function JobMatching() {
           <div className="grid md:grid-cols-2 gap-6">
 
             {jobs.map((job, index) => {
-              const score = job.match_score || job.matchScore || 0;
+              const score = job.matchScore || 0;
 
-              // CLEAN DESCRIPTION (remove HTML)
               const cleanDescription = (job.job_description || job.description || "")
-                .replace(/<[^>]+>/g, "");
+                .replace(/<[^>]+>/g, "")
+                .replace(/&[^;]+;/g, "");
 
-              // IMPROVED LINK GENERATION
               const generateJobLink = (job) => {
                 if (job.apply_link && job.apply_link.startsWith("http")) {
                   return job.apply_link;
@@ -133,7 +171,6 @@ export default function JobMatching() {
                   return job.url;
                 }
 
-                // fallback to company/job search
                 const query =
                   (job.job_title || job.title || "") +
                   " " +

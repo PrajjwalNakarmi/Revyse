@@ -15,12 +15,27 @@ const toUserDto = (user) => ({
 
 export const getAdminSummary = async (req, res) => {
   try {
-    const [totalUsers, cvUploads, jobsSynced, adminUsers] = await Promise.all([
+    const [totalUsers, cvUploads, dbJobs, adminUsers] = await Promise.all([
       User.countDocuments(),
       CV.countDocuments(),
       Job.countDocuments(),
       User.countDocuments({ role: "admin" }),
     ]);
+
+    let apiJobs = 0;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/jobs");
+
+      if (response.ok) {
+        const data = await response.json();
+        apiJobs = (data.jobs || []).length;
+      }
+    } catch (error) {
+      console.log("API job fetch failed");
+    }
+
+    const jobsSynced = apiJobs > 0 ? apiJobs : dbJobs;
 
     const dbReady = mongoose.connection.readyState === 1;
 
@@ -32,7 +47,7 @@ export const getAdminSummary = async (req, res) => {
       adminUsers,
       services: {
         database: dbReady ? "Connected" : "Disconnected",
-        jobsApi: "Running",
+        jobsApi: apiJobs > 0 ? "Live" : "Offline",
         aiEngine: "Operational",
         ocrService: "Active",
       },
@@ -44,7 +59,10 @@ export const getAdminSummary = async (req, res) => {
 
 export const getAdminUsers = async (req, res) => {
   try {
-    const users = await User.find().select("name email role createdAt").sort({ createdAt: -1 });
+    const users = await User.find()
+      .select("name email role createdAt")
+      .sort({ createdAt: -1 });
+
     return res.json({ users: users.map(toUserDto) });
   } catch (error) {
     return res.status(500).json({ message: "Failed to load users" });
@@ -60,6 +78,7 @@ export const createAdminUser = async (req, res) => {
     }
 
     const existing = await User.findOne({ email: email.toLowerCase() });
+
     if (existing) {
       return res.status(409).json({ message: "Email already in use" });
     }
@@ -83,6 +102,7 @@ export const updateAdminUser = async (req, res) => {
     const { name, email, role, password } = req.body;
 
     const user = await User.findById(id).select("+password");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -91,10 +111,16 @@ export const updateAdminUser = async (req, res) => {
 
     if (email) {
       const nextEmail = email.trim().toLowerCase();
-      const emailOwner = await User.findOne({ email: nextEmail, _id: { $ne: id } });
+
+      const emailOwner = await User.findOne({
+        email: nextEmail,
+        _id: { $ne: id },
+      });
+
       if (emailOwner) {
         return res.status(409).json({ message: "Email already in use" });
       }
+
       user.email = nextEmail;
     }
 
@@ -102,6 +128,7 @@ export const updateAdminUser = async (req, res) => {
     if (password && password.trim()) user.password = password.trim();
 
     await user.save();
+
     return res.json({ user: toUserDto(user) });
   } catch (error) {
     return res.status(500).json({ message: "Failed to update user" });
@@ -113,18 +140,21 @@ export const deleteAdminUser = async (req, res) => {
     const { id } = req.params;
 
     const user = await User.findById(id);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     if (user.role === "admin") {
       const totalAdmins = await User.countDocuments({ role: "admin" });
+
       if (totalAdmins <= 1) {
         return res.status(400).json({ message: "Cannot delete last admin" });
       }
     }
 
     await User.findByIdAndDelete(id);
+
     return res.json({ message: "User deleted" });
   } catch (error) {
     return res.status(500).json({ message: "Failed to delete user" });
@@ -141,7 +171,9 @@ export const getAdminLogs = async (req, res) => {
       {
         id: "log-db",
         time: new Date().toLocaleTimeString(),
-        message: dbReady ? "Database connection healthy" : "Database connection issue detected",
+        message: dbReady
+          ? "Database connection healthy"
+          : "Database connection issue detected",
         level: dbReady ? "Success" : "Warning",
       },
       {
@@ -195,6 +227,7 @@ export const getAdminJobsStatus = async (req, res) => {
 
     try {
       const response = await fetch("http://localhost:5000/api/jobs");
+
       if (response.ok) {
         const data = await response.json();
         apiJobs = (data.jobs || []).length;
@@ -206,9 +239,21 @@ export const getAdminJobsStatus = async (req, res) => {
     }
 
     const services = [
-      { name: "Public jobs API", status: apiJobs > 0 ? "Active" : "Checking", label: apiStatus },
-      { name: "Database jobs index", status: dbJobs > 0 ? `${dbJobs} stored` : "Empty", label: "Live" },
-      { name: "Sync worker", status: "Ready", label: "Idle" },
+      {
+        name: "Public jobs API",
+        status: apiJobs > 0 ? "Active" : "Checking",
+        label: apiStatus,
+      },
+      {
+        name: "Database jobs index",
+        status: dbJobs > 0 ? `${dbJobs} stored` : "Empty",
+        label: "Live",
+      },
+      {
+        name: "Sync worker",
+        status: "Ready",
+        label: "Idle",
+      },
     ];
 
     return res.json({

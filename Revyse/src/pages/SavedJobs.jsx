@@ -17,7 +17,6 @@ export default function SavedJobs() {
     }
   }, []);
 
-  // ✅ FETCH FROM DATABASE
   const fetchSavedJobs = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -35,7 +34,6 @@ export default function SavedJobs() {
     }
   };
 
-  // ✅ DELETE FROM DATABASE
   const removeJob = async (jobId) => {
     try {
       const token = localStorage.getItem("token");
@@ -53,6 +51,25 @@ export default function SavedJobs() {
     }
   };
 
+  // clean HTML tags
+  const cleanText = (text) => {
+    if (!text) return "";
+    return text
+      .replace(/<[^>]+>/g, "")
+      .replace(/&[^;]+;/g, "")
+      .slice(0, 200);
+  };
+
+  // generate fallback apply link
+  const getApplyLink = (job) => {
+    if (job.apply_link && job.apply_link.startsWith("http")) {
+      return job.apply_link;
+    }
+
+    const query = `${job.title} ${job.company}`;
+    return `https://www.google.com/search?q=${encodeURIComponent(query + " careers")}`;
+  };
+
   if (!user) {
     return <div className="p-10 text-center text-slate-600">Loading...</div>;
   }
@@ -62,12 +79,15 @@ export default function SavedJobs() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full flex-1 px-6 py-10">
+
         <section className="mb-8 overflow-hidden rounded-3xl border border-[#1f5d66]/15 bg-gradient-to-r from-[#0f2a34] via-[#15424b] to-[#1f5d66] px-6 py-8 text-white shadow-[0_24px_80px_-40px_rgba(15,42,52,0.65)] sm:px-8">
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#ffd4a8]">
             <span className="inline-flex h-2 w-2 rounded-full bg-[#f28f3b]" />
             Revyse Library
           </p>
-          <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">Your saved opportunities</h1>
+          <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+            Your saved opportunities
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
             Keep track of shortlisted roles and revisit them anytime.
           </p>
@@ -79,69 +99,82 @@ export default function SavedJobs() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
-            {savedJobs.map((job) => (
-              <div
-                key={job._id} // ✅ FIXED
-                className="glass-card rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_-50px_rgba(15,42,52,0.9)]"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {job.title}
-                    </h3>
 
-                    <p className="text-sm text-slate-600">
-                      {job.company}
-                    </p>
+            {savedJobs.map((job) => {
+
+              const cleanDescription = cleanText(job.description);
+              const applyLink = getApplyLink(job);
+
+              return (
+                <div
+                  key={job._id}
+                  className="glass-card rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_-50px_rgba(15,42,52,0.9)]"
+                >
+
+                  <div className="flex justify-between items-start mb-4">
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {job.title}
+                      </h3>
+
+                      <p className="text-sm text-slate-600">
+                        {job.company}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full ${
+                        job.match_score > 80
+                          ? "bg-[#dff4ea] text-[#1e6d4a]"
+                          : job.match_score > 60
+                          ? "bg-[#fff1de] text-[#9a5e1f]"
+                          : "bg-[#ffe8e8] text-[#8b2b2b]"
+                      }`}
+                    >
+                      {job.match_score}% Match
+                    </span>
                   </div>
 
-                  <span
-                    className={`px-3 py-1 text-xs rounded-full ${
-                      job.match_score > 80
-                        ? "bg-[#dff4ea] text-[#1e6d4a]"
-                        : job.match_score > 60
-                        ? "bg-[#fff1de] text-[#9a5e1f]"
-                        : "bg-[#ffe8e8] text-[#8b2b2b]"
-                    }`}
-                  >
-                    {job.match_score}% Match
-                  </span>
-                </div>
+                  <p className="mb-4 text-sm text-slate-600">
+                    {cleanDescription || "No description available"}
+                  </p>
 
-                <p className="mb-4 text-sm text-slate-600">
-                  {job.description}
-                </p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.skills?.map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-full bg-[#e1f0f2] px-2 py-1 text-xs text-[#11414a]"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {job.skills?.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-full bg-[#e1f0f2] px-2 py-1 text-xs text-[#11414a]"
+                  <div className="flex justify-between items-center">
+
+                    <a
+                      href={applyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
                     >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                      Apply →
+                    </a>
 
-                <div className="flex justify-between items-center">
-                  <a
-                    href={job.apply_link} // ✅ FIXED
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
-                  >
-                    Apply →
-                  </a>
+                    <button
+                      onClick={() => removeJob(job._id)}
+                      className="text-sm text-[#8b2b2b] hover:underline"
+                    >
+                      Remove
+                    </button>
 
-                  <button
-                    onClick={() => removeJob(job._id)} // ✅ FIXED
-                    className="text-sm text-[#8b2b2b] hover:underline"
-                  >
-                    Remove
-                  </button>
+                  </div>
+
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
       </main>
