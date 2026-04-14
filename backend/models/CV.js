@@ -7,27 +7,57 @@ const cvSchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
+
     file_name: {
       type: String,
       required: true,
     },
+
     file_path: {
       type: String,
-      required: true,
+      required: false,
     },
+
     upload_date: {
       type: Date,
       default: Date.now,
     },
+
     extracted_text: {
       type: String,
     },
+
+    // ✅ ADDED (from frontend)
+    ats_score: {
+      type: Number,
+      default: 0,
+    },
+
+    score: {
+      type: Number,
+      default: 0,
+    },
+
+    skills: [
+      {
+        type: String,
+      },
+    ],
+
+    ai_improvements: [
+      {
+        type: String,
+      },
+    ],
+
     summary: {
       type: String,
     },
+
     analysis_date: {
       type: Date,
     },
+
     job_matches: [
       {
         job_id: {
@@ -37,6 +67,7 @@ const cvSchema = new mongoose.Schema(
         score: Number,
       },
     ],
+
     generated_cvs: [
       {
         template_name: String,
