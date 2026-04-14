@@ -11,8 +11,8 @@ export const pdfToImages = async (pdfPath, outputDir) => {
     format: "png",
     out_dir: outputDir,
     out_prefix: "page",
-    page: null,          // convert all pages
-    dpi: 300
+    page: null,           // convert all pages
+    density: 300          // FIXED (was dpi)
   };
 
   await pdfPoppler.convert(pdfPath, options);

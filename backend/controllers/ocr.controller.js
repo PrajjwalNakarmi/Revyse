@@ -34,7 +34,9 @@ export const extractText = async (req, res) => {
 
         const {
           data: { text },
-        } = await Tesseract.recognize(imgPath, "eng");
+        } = await Tesseract.recognize(imgPath, "eng", {
+          tessedit_pageseg_mode: 6,
+        });
 
         extractedText += "\n" + text;
       }
@@ -49,7 +51,6 @@ export const extractText = async (req, res) => {
     else if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
       const processedPath = `uploads/processed_${Date.now()}.png`;
 
-      // Improve OCR accuracy
       await sharp(filePath)
         .resize({ width: 1600 })
         .grayscale()
@@ -61,7 +62,7 @@ export const extractText = async (req, res) => {
       const {
         data: { text },
       } = await Tesseract.recognize(processedPath, "eng", {
-        tessedit_pageseg_mode: 1,
+        tessedit_pageseg_mode: 6,
       });
 
       extractedText = text;
@@ -76,16 +77,43 @@ export const extractText = async (req, res) => {
     }
 
     /* =========================
-       CLEAN TEXT (FIX)
+       CLEAN TEXT (IMPROVED)
     ========================= */
     const cleanText = (text) => {
       return text
-        .replace(/[^a-zA-Z0-9@.\n\s]/g, "")
+        .replace(/[|]/g, "I")
+        .replace(/0/g, "o")
+        .replace(/1/g, "l")
+        .replace(/5/g, "s")
+        .replace(/[^a-zA-Z0-9@.\n\s]/g, " ")
+        .replace(/\b[a-zA-Z]{1,2}\b/g, "")
         .replace(/\s+/g, " ")
         .trim();
     };
 
     extractedText = cleanText(extractedText);
+
+    /* =========================
+       LOW QUALITY OCR DETECTION
+    ========================= */
+    if (extractedText.split(" ").length < 30) {
+      fs.unlinkSync(filePath);
+
+      return res.json({
+        fileName: req.file.originalname,
+        extractedText,
+        atsScore: 30,
+        score: 30,
+        method,
+        skills: [],
+        aiImprovements: [
+          "Upload a PDF version of your resume for better accuracy",
+          "Use a clean black-and-white resume format",
+          "Avoid images or stylized fonts in your CV",
+        ],
+        warning: "Poor OCR quality detected",
+      });
+    }
 
     /* =========================
        VALIDATION
@@ -98,7 +126,7 @@ export const extractText = async (req, res) => {
     }
 
     /* =========================
-       ANALYSIS (FIXED)
+       ANALYSIS
     ========================= */
     const atsScore =
       extractedText.length > 100
