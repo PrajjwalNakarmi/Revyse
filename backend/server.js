@@ -10,6 +10,7 @@ import jobRoutes from "./routes/job.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import savedJobRoutes from "./routes/savedJob.routes.js";
+import jobSourceRoutes from "./routes/jobSource.routes.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/saved-jobs", savedJobRoutes);
+app.use("/api/job-sources", jobSourceRoutes);
 
 // Test route
 app.get("/", (req, res) => {

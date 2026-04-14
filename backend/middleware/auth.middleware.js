@@ -13,6 +13,13 @@ const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // FIX: allow admin without DB lookup
+    if (decoded.role === "admin") {
+      req.user = decoded;
+      return next();
+    }
+
+    // normal users
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
@@ -21,7 +28,7 @@ const protect = async (req, res, next) => {
 
     req.user = user;
 
-    next(); // correct usage
+    next();
 
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });

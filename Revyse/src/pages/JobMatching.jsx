@@ -36,7 +36,7 @@ export default function JobMatching() {
     loadJobs();
   }, []);
 
-  // FIXED: SAVE JOB TO DATABASE
+  // SAVE JOB
   const saveJob = async (job) => {
     try {
       const token = localStorage.getItem("token");
@@ -53,12 +53,12 @@ export default function JobMatching() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          job_id: job.id,
-          title: job.title,
-          company: job.company,
-          description: job.description,
-          apply_link: job.applyLink,
-          match_score: job.matchScore,
+          job_id: job._id || job.id,
+          title: job.job_title || job.title,
+          company: job.company_name || job.company,
+          description: job.job_description || job.description,
+          apply_link: job.apply_link || job.url,
+          match_score: job.match_score || job.matchScore || 0,
           skills: job.skills || [],
         }),
       });
@@ -116,67 +116,96 @@ export default function JobMatching() {
         {!noResume && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 gap-6">
 
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="glass-card rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_-50px_rgba(15,42,52,0.9)]"
-              >
+            {jobs.map((job, index) => {
+              const score = job.match_score || job.matchScore || 0;
 
-                <div className="flex justify-between items-start mb-4">
+              // CLEAN DESCRIPTION (remove HTML)
+              const cleanDescription = (job.job_description || job.description || "")
+                .replace(/<[^>]+>/g, "");
 
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {job.title}
-                    </h3>
+              // IMPROVED LINK GENERATION
+              const generateJobLink = (job) => {
+                if (job.apply_link && job.apply_link.startsWith("http")) {
+                  return job.apply_link;
+                }
 
-                    <p className="text-sm text-slate-600">
-                      {job.company}
-                    </p>
+                if (job.url && job.url.startsWith("http")) {
+                  return job.url;
+                }
 
-                    <p className="text-xs text-slate-500">
-                      {job.location}
-                    </p>
+                // fallback to company/job search
+                const query =
+                  (job.job_title || job.title || "") +
+                  " " +
+                  (job.company_name || job.company || "");
+
+                return `https://www.google.com/search?q=${encodeURIComponent(query + " careers")}`;
+              };
+
+              const jobLink = generateJobLink(job);
+
+              return (
+                <div
+                  key={job._id || index}
+                  className="glass-card rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_-50px_rgba(15,42,52,0.9)]"
+                >
+
+                  <div className="flex justify-between items-start mb-4">
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {job.job_title || job.title || "No Title"}
+                      </h3>
+
+                      <p className="text-sm text-slate-600">
+                        {job.company_name || job.company || "Unknown Company"}
+                      </p>
+
+                      <p className="text-xs text-slate-500">
+                        {job.location || "Remote"}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full ${
+                        score > 80
+                          ? "bg-[#dff4ea] text-[#1e6d4a]"
+                          : score > 50
+                          ? "bg-[#fff1de] text-[#9a5e1f]"
+                          : "bg-[#ffe8e8] text-[#8b2b2b]"
+                      }`}
+                    >
+                      {score}% Match
+                    </span>
                   </div>
 
-                  <span
-                    className={`px-3 py-1 text-xs rounded-full ${
-                      job.matchScore >= 70
-                        ? "bg-[#dff4ea] text-[#1e6d4a]"
-                        : job.matchScore >= 40
-                        ? "bg-[#fff1de] text-[#9a5e1f]"
-                        : "bg-[#ffe8e8] text-[#8b2b2b]"
-                    }`}
-                  >
-                    {job.matchScore}% Match
-                  </span>
-                </div>
+                  <p className="mb-4 line-clamp-4 text-sm text-slate-600">
+                    {cleanDescription || "No description available"}
+                  </p>
 
-                <p className="mb-4 line-clamp-4 text-sm text-slate-600">
-                  {job.description}
-                </p>
+                  <div className="flex justify-between">
 
-                <div className="flex justify-between">
+                    <a
+                      href={jobLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
+                    >
+                      Apply →
+                    </a>
 
-                  <a
-                    href={job.applyLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
-                  >
-                    Apply →
-                  </a>
+                    <button
+                      onClick={() => saveJob(job)}
+                      className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
+                    >
+                      Save Job
+                    </button>
 
-                  <button
-                    onClick={() => saveJob(job)}
-                    className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
-                  >
-                    Save Job
-                  </button>
+                  </div>
 
                 </div>
-
-              </div>
-            ))}
+              );
+            })}
 
           </div>
         )}

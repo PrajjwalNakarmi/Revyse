@@ -1,58 +1,41 @@
-export async function searchJobsBySkills(skills) {
+export const searchJobsBySkills = async (skills) => {
   try {
-    const response = await fetch("http://localhost:5000/api/jobs");
+    const res = await fetch("http://localhost:5000/api/jobs");
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch jobs from backend");
-    }
+    const data = await res.json();
 
-    const data = await response.json();
+    const jobs = data.jobs || [];
 
-    //  FIX: support both formats (jobs OR data)
-    const jobList = data.jobs || data.data || [];
+    // Simple skill filtering
+    const filteredJobs = jobs.map((job) => {
+      const text = (
+        job.title +
+        " " +
+        job.description +
+        " " +
+        (job.company || "")
+      ).toLowerCase();
 
-    if (!jobList.length) return [];
+      let matchCount = 0;
 
-    const resumeSkills = skills.map((skill) =>
-      skill.toLowerCase().trim()
-    );
+      skills.forEach((skill) => {
+        if (text.includes(skill.toLowerCase())) {
+          matchCount++;
+        }
+      });
 
-    const jobs = jobList.map((job, index) => {
-      const description = job.description || "";
-
-      const cleanDescription = description
-        .replace(/<[^>]*>/g, "")
-        .toLowerCase();
-
-      const matchedSkills = resumeSkills.filter((skill) =>
-        cleanDescription.includes(skill)
-      );
-
-      const matchScore =
-        resumeSkills.length === 0
-          ? 0
-          : Math.round(
-              (matchedSkills.length / resumeSkills.length) * 100
-            );
+      const score = Math.round((matchCount / skills.length) * 100);
 
       return {
-        id: job.slug || job.url || index,
-        title: job.title || "Job Title",
-        company: job.company_name || job.company || "Company",
-        location: job.location || "Remote",
-        description:
-          cleanDescription.slice(0, 200) + "...",
-        applyLink: job.url || "#",
-        skills: matchedSkills,
-        matchScore
+        ...job,
+        match_score: score,
       };
     });
 
-    //  DO NOT remove jobs — just sort
-    return jobs.sort((a, b) => b.matchScore - a.matchScore);
+    return filteredJobs;
 
   } catch (error) {
-    console.error("Job API error:", error);
+    console.error("Job fetch failed", error);
     return [];
   }
-}
+};

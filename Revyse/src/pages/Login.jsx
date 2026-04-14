@@ -21,8 +21,19 @@ export default function Login() {
 
       const data = await loginUser({email,password});
 
-      localStorage.setItem("token",data.token);
-      localStorage.setItem("user",JSON.stringify(data.user));
+      // Clear old token to prevent conflicts
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Ensure token exists
+      if (!data.token) {
+        setError("Login failed: No token received");
+        return;
+      }
+
+      // Store new token and user
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       // Redirect based on user role
       if (data.user.role === "admin") {
@@ -32,7 +43,7 @@ export default function Login() {
       }
 
     }catch(err){
-      setError(err.message);
+      setError(err.message || "Login failed");
     }
   };
 
@@ -70,8 +81,19 @@ export default function Login() {
         });
       }
 
-      localStorage.setItem("token",data.token);
-      localStorage.setItem("user",JSON.stringify(data.user));
+      // Clear old token
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Ensure token exists
+      if (!data.token) {
+        setError("Google login failed: No token received");
+        return;
+      }
+
+      // Store token and user
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       // Redirect based on user role
       if (data.user.role === "admin") {

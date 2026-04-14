@@ -1,62 +1,115 @@
 import express from "express";
+import JobSource from "../models/jobSource.js";
+import Parser from "rss-parser";
 
 const router = express.Router();
+const parser = new Parser();
 
 router.get("/", async (req, res) => {
   try {
     let jobs = [];
 
-    // ---------- SOURCE 1: RemoteOK ----------
-    try {
-      const remoteRes = await fetch("https://remoteok.com/api");
+    const sources = await JobSource.find();
 
-      if (remoteRes.ok) {
-        const remoteData = await remoteRes.json();
+    for (const source of sources) {
+      try {
 
-        const remoteJobs = remoteData.slice(1, 20).map((job) => ({
-          title: job.position,
-          company: job.company,
-          location: "Remote",
-          description: job.description || "",
-          url: job.url,
-        }));
+        // =========================
+        // WEWORKREMOTELY (RSS)
+        // =========================
+        if (source.api_url.includes("weworkremotely")) {
+          const feed = await parser.parseURL(source.api_url);
 
-        jobs = [...jobs, ...remoteJobs];
+          const mapped = feed.items.map((item) => ({
+            title: item.title,
+            company: item.creator || "Unknown",
+            location: "Remote",
+            description: item.contentSnippet || "",
+            url: item.link,
+          }));
+
+          jobs.push(...mapped);
+          continue;
+        }
+
+        // =========================
+        // NORMAL API CALL
+        // =========================
+        const response = await fetch(source.api_url);
+
+        if (!response.ok) continue;
+
+        const data = await response.json();
+
+        // =========================
+        // REMOTIVE
+        // =========================
+        if (data.jobs) {
+          const mapped = data.jobs.map((job) => ({
+            title: job.title,
+            company: job.company_name,
+            location: job.candidate_required_location || "Remote",
+            description: job.description,
+            url: job.url,
+          }));
+
+          jobs.push(...mapped);
+        }
+
+        // =========================
+        // ARBEITNOW
+        // =========================
+        else if (data.data) {
+          const mapped = data.data.map((job) => ({
+            title: job.title,
+            company: job.company_name,
+            location: job.location || "Remote",
+            description: job.description,
+            url: job.url,
+          }));
+
+          jobs.push(...mapped);
+        }
+
+        // =========================
+        // THE MUSE
+        // =========================
+        else if (data.results) {
+          const mapped = data.results.map((job) => ({
+            title: job.name,
+            company: job.company?.name || "Unknown",
+            location: job.locations?.[0]?.name || "Remote",
+            description: job.contents,
+            url: job.refs?.landing_page,
+          }));
+
+          jobs.push(...mapped);
+        }
+
+        // =========================
+        // GENERIC FALLBACK
+        // =========================
+        else if (Array.isArray(data)) {
+          const mapped = data.map((job) => ({
+            title: job.title || job.position || "Unknown",
+            company: job.company || "Unknown",
+            location: job.location || "Remote",
+            description: job.description || "",
+            url: job.url || job.link || "",
+          }));
+
+          jobs.push(...mapped);
+        }
+
+      } catch (err) {
+        console.log(`Failed source: ${source.name}`);
       }
-    } catch (err) {
-      console.error("RemoteOK failed");
-    }
-
-    // ---------- SOURCE 2: Arbeitnow ----------
-    try {
-      const arbeitRes = await fetch("https://arbeitnow.com/api/job-board-api");
-
-      if (arbeitRes.ok) {
-        const arbeitData = await arbeitRes.json();
-
-        const arbeitJobs = arbeitData.data.map((job) => ({
-          title: job.title,
-          company: job.company_name,
-          location: job.location || "Remote",
-          description: job.description || "",
-          url: job.url,
-        }));
-
-        jobs = [...jobs, ...arbeitJobs];
-      }
-    } catch (err) {
-      console.error("Arbeitnow failed");
-    }
-
-    // ---------- FINAL RESPONSE ----------
-    if (!jobs.length) {
-      return res.json({ jobs: [] });
     }
 
     res.json({ jobs });
 
   } catch (error) {
-    console.error("Job API error:", error);
+    console.error("Job fetch error:", error);
     res.status(500).json({ jobs: [] });
   }
 });

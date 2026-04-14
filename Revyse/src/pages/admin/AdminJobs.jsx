@@ -1,75 +1,204 @@
 import { useEffect, useState } from "react";
-import { FaSync, FaCloud, FaBolt } from "react-icons/fa";
-import { fetchAdminJobsStatus } from "../../services/adminService";
+import { FaPlus, FaTrash } from "react-icons/fa";
 
 export default function AdminJobs() {
-  const [jobStatus, setJobStatus] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const loadJobsStatus = async () => {
+  // FETCH SOURCES (SAFE)
+  const fetchSources = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("No token found");
+        return;
+      }
+
+      const res = await fetch("http://localhost:5000/api/job-sources", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.error("API Error:", res.status);
+        return;
+      }
+
+      const data = await res.json();
+
+      // Prevent crash
+      if (!Array.isArray(data)) {
+        console.warn("Invalid response:", data);
+        return;
+      }
+
+      setSources(data);
+
+    } catch (error) {
+      console.error("Fetch failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSources();
+  }, []);
+
+  // ADD SOURCE (SAFE)
+  const addSource = async () => {
+    if (!name || !url) {
+      alert("Enter name and API URL");
+      return;
+    }
+
     try {
       setLoading(true);
-      setError("");
-      const data = await fetchAdminJobsStatus();
-      setJobStatus(data);
-    } catch (err) {
-      setError(err.message || "Failed to load jobs status");
-      setJobStatus(null);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login as admin");
+        return;
+      }
+
+      const res = await fetch("http://localhost:5000/api/job-sources", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          api_url: url,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Failed to add source");
+        return;
+      }
+
+      setName("");
+      setUrl("");
+      fetchSources();
+
+    } catch (error) {
+      console.error("Add failed:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadJobsStatus();
-    const timer = setInterval(loadJobsStatus, 3000);
-    return () => clearInterval(timer);
-  }, []);
+  // DELETE SOURCE (SAFE)
+  const deleteSource = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
 
-  const integrations = jobStatus?.services || [];
+      if (!token) return;
+
+      await fetch(`http://localhost:5000/api/job-sources/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      fetchSources();
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
 
   return (
-    <div className="grid h-full content-start gap-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5">
-        <p className="text-xs uppercase tracking-[0.24em] text-teal-700">Job integrations</p>
-        <h2 className="mt-2 text-2xl font-semibold text-slate-900">Jobs source management</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Live sync state updates every 3 seconds.</p>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    <div className="grid h-full content-start gap-6">
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {!loading && integrations.length === 0 && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">No job sources available yet.</div>
-          )}
-          {integrations.map((integration) => (
-            <div key={integration.name} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm text-slate-500">{integration.name}</p>
-                  <p className="mt-2 text-xl font-semibold text-slate-900">{integration.status}</p>
-                </div>
-                <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">{integration.label}</span>
+      {/* HEADER */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="text-2xl font-semibold text-slate-900">
+          Job Source Management
+        </h2>
+        <p className="text-sm text-slate-600 mt-1">
+          Add or remove job APIs used in the system
+        </p>
+      </div>
+
+      {/* ADD SOURCE */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="grid md:grid-cols-3 gap-4">
+
+          <input
+            type="text"
+            placeholder="Source Name (e.g. RemoteOK)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="border rounded-lg px-4 py-2 text-sm"
+          />
+
+          <input
+            type="text"
+            placeholder="API URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="border rounded-lg px-4 py-2 text-sm"
+          />
+
+          <button
+            onClick={addSource}
+            className="flex items-center justify-center gap-2 bg-[#1f5d66] text-white rounded-lg px-4 py-2 text-sm hover:bg-[#15424b]"
+          >
+            <FaPlus /> {loading ? "Adding..." : "Add Source"}
+          </button>
+
+        </div>
+      </div>
+
+      {/* LIST SOURCES */}
+      <div className="grid md:grid-cols-2 gap-4">
+
+        {(!Array.isArray(sources) || sources.length === 0) && (
+          <div className="text-sm text-slate-500">
+            No job sources added yet.
+          </div>
+        )}
+
+        {Array.isArray(sources) &&
+          sources.map((source) => (
+            <div
+              key={source._id}
+              className="rounded-xl border border-slate-200 bg-white p-4 flex justify-between items-center"
+            >
+
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {source.name}
+                </p>
+
+                <p className="text-xs text-slate-500 break-all">
+                  {source.api_url}
+                </p>
+
+                <p className="text-xs mt-1 text-green-600">
+                  {source.active ? "Active" : "Inactive"}
+                </p>
               </div>
+
+              <button
+                onClick={() => deleteSource(source._id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <FaTrash />
+              </button>
+
             </div>
           ))}
-        </div>
 
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            onClick={loadJobsStatus}
-            className="inline-flex items-center gap-2 rounded-full bg-[#0f766e] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d6b5a]"
-          >
-            <FaSync /> Refresh all feeds
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-            <FaCloud /> API jobs: {jobStatus?.jobsCount ?? "-"}
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-            <FaBolt /> DB jobs: {jobStatus?.dbJobs ?? "-"}
-          </button>
-        </div>
-        <p className="mt-3 text-xs text-slate-500">Last sync: {jobStatus?.lastSyncedAt ? new Date(jobStatus.lastSyncedAt).toLocaleString() : "-"}</p>
       </div>
+
     </div>
   );
 }
