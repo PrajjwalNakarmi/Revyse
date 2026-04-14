@@ -13,22 +13,44 @@ export default function SavedJobs() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      const jobs =
-        JSON.parse(localStorage.getItem(`savedJobs_${parsedUser.id}`)) || [];
-
-      setSavedJobs(jobs);
+      fetchSavedJobs();
     }
   }, []);
 
-  const removeJob = (jobId) => {
-    const updated = savedJobs.filter((job) => job.id !== jobId);
+  // ✅ FETCH FROM DATABASE
+  const fetchSavedJobs = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-    setSavedJobs(updated);
+      const res = await fetch("http://localhost:5000/api/saved-jobs", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    localStorage.setItem(
-      `savedJobs_${user.id}`,
-      JSON.stringify(updated)
-    );
+      const data = await res.json();
+      setSavedJobs(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // ✅ DELETE FROM DATABASE
+  const removeJob = async (jobId) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await fetch(`http://localhost:5000/api/saved-jobs/${jobId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setSavedJobs((prev) => prev.filter((job) => job._id !== jobId));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   if (!user) {
@@ -59,7 +81,7 @@ export default function SavedJobs() {
           <div className="grid md:grid-cols-2 gap-6">
             {savedJobs.map((job) => (
               <div
-                key={job.id}
+                key={job._id} // ✅ FIXED
                 className="glass-card rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_-50px_rgba(15,42,52,0.9)]"
               >
                 <div className="flex justify-between items-start mb-4">
@@ -75,14 +97,14 @@ export default function SavedJobs() {
 
                   <span
                     className={`px-3 py-1 text-xs rounded-full ${
-                      job.matchScore > 80
+                      job.match_score > 80
                         ? "bg-[#dff4ea] text-[#1e6d4a]"
-                        : job.matchScore > 60
+                        : job.match_score > 60
                         ? "bg-[#fff1de] text-[#9a5e1f]"
                         : "bg-[#ffe8e8] text-[#8b2b2b]"
                     }`}
                   >
-                    {job.matchScore}% Match
+                    {job.match_score}% Match
                   </span>
                 </div>
 
@@ -103,7 +125,7 @@ export default function SavedJobs() {
 
                 <div className="flex justify-between items-center">
                   <a
-                    href={job.applyLink}
+                    href={job.apply_link} // ✅ FIXED
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-medium text-[#1f5d66] hover:text-[#15424b]"
@@ -112,7 +134,7 @@ export default function SavedJobs() {
                   </a>
 
                   <button
-                    onClick={() => removeJob(job.id)}
+                    onClick={() => removeJob(job._id)} // ✅ FIXED
                     className="text-sm text-[#8b2b2b] hover:underline"
                   >
                     Remove

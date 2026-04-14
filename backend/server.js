@@ -9,6 +9,7 @@ import ocrRoutes from "./routes/ocr.routes.js";
 import jobRoutes from "./routes/job.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import savedJobRoutes from "./routes/savedJob.routes.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use("/api/ocr", ocrRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/saved-jobs", savedJobRoutes);
 
 // Test route
 app.get("/", (req, res) => {

@@ -21,18 +21,11 @@ export default function JobMatching() {
       try {
         const results = await searchJobsBySkills(resume.skills);
 
-        // ✅ FIX: handle BOTH array and object
         const jobList = Array.isArray(results)
           ? results
           : results?.jobs || [];
 
-        if (!jobList.length) {
-          console.warn("No jobs returned from API");
-        }
-
-        // 🔥 NO NEED TO RE-CALCULATE MATCH AGAIN (already done in service)
         setJobs(jobList);
-
       } catch (error) {
         console.error("Job loading failed", error);
       } finally {
@@ -43,22 +36,44 @@ export default function JobMatching() {
     loadJobs();
   }, []);
 
-  const saveJob = (job) => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return;
+  // FIXED: SAVE JOB TO DATABASE
+  const saveJob = async (job) => {
+    try {
+      const token = localStorage.getItem("token");
 
-    const key = `savedJobs_${user.id}`;
-    const existing = JSON.parse(localStorage.getItem(key)) || [];
+      if (!token) {
+        alert("Please login first");
+        return;
+      }
 
-    if (existing.find((j) => j.id === job.id)) {
-      alert("Job already saved");
-      return;
+      const res = await fetch("http://localhost:5000/api/saved-jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          job_id: job.id,
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          apply_link: job.applyLink,
+          match_score: job.matchScore,
+          skills: job.skills || [],
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Job saved successfully");
+      } else {
+        alert(data.message || "Error saving job");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save job");
     }
-
-    const updated = [...existing, job];
-    localStorage.setItem(key, JSON.stringify(updated));
-
-    alert("Job saved successfully");
   };
 
   return (
@@ -81,7 +96,9 @@ export default function JobMatching() {
         </section>
 
         {loading && (
-          <div className="glass-card rounded-2xl p-8 text-center text-slate-600">Loading jobs...</div>
+          <div className="glass-card rounded-2xl p-8 text-center text-slate-600">
+            Loading jobs...
+          </div>
         )}
 
         {noResume && (
