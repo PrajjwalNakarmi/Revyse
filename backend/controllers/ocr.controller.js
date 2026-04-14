@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import Tesseract from "tesseract.js";
+import sharp from "sharp";
 import { pdfToImages } from "../utils/pdfToImages.js";
 import { calculateATSScore } from "../utils/atsScorer.js";
 import { generateAIImprovements } from "../services/aiImprovement.service.js";
@@ -19,38 +20,98 @@ export const extractText = async (req, res) => {
     let extractedText = "";
     let method = "";
 
+    /* =========================
+       PDF OCR
+    ========================= */
     if (ext === ".pdf") {
       const outputDir = `uploads/pdf_images_${Date.now()}`;
       await pdfToImages(filePath, outputDir);
 
       const images = fs.readdirSync(outputDir);
+
       for (const img of images) {
         const imgPath = path.join(outputDir, img);
-        const ocr = await Tesseract.recognize(imgPath, "eng");
-        extractedText += "\n" + ocr.data.text;
+
+        const {
+          data: { text },
+        } = await Tesseract.recognize(imgPath, "eng");
+
+        extractedText += "\n" + text;
       }
 
       fs.rmSync(outputDir, { recursive: true, force: true });
       method = "pdf-to-image-ocr";
     }
 
-    if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
-      const ocr = await Tesseract.recognize(filePath, "eng");
-      extractedText = ocr.data.text;
-      method = "image-ocr";
+    /* =========================
+       IMAGE OCR (ENHANCED)
+    ========================= */
+    else if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
+      const processedPath = `uploads/processed_${Date.now()}.png`;
+
+      // Improve OCR accuracy
+      await sharp(filePath)
+        .resize({ width: 1600 })
+        .grayscale()
+        .normalize()
+        .sharpen()
+        .threshold(150)
+        .toFile(processedPath);
+
+      const {
+        data: { text },
+      } = await Tesseract.recognize(processedPath, "eng", {
+        tessedit_pageseg_mode: 1,
+      });
+
+      extractedText = text;
+      method = "image-ocr-enhanced";
+
+      fs.unlinkSync(processedPath);
     }
 
-    if (!extractedText || extractedText.trim().length < 50) {
+    else {
       fs.unlinkSync(filePath);
-      return res.status(400).json({ message: "Text extraction failed" });
+      return res.status(400).json({ message: "Unsupported file type" });
     }
 
-    /* ---------- ATS + SKILLS + AI ---------- */
-    const atsScore = calculateATSScore(extractedText);
-    const skills = extractSkillsFromText(extractedText);
+    /* =========================
+       CLEAN TEXT (FIX)
+    ========================= */
+    const cleanText = (text) => {
+      return text
+        .replace(/[^a-zA-Z0-9@.\n\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    extractedText = cleanText(extractedText);
+
+    /* =========================
+       VALIDATION
+    ========================= */
+    if (!extractedText || extractedText.length < 20) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({
+        message: "Low quality text detected. Try a clearer image or PDF.",
+      });
+    }
+
+    /* =========================
+       ANALYSIS (FIXED)
+    ========================= */
+    const atsScore =
+      extractedText.length > 100
+        ? calculateATSScore(extractedText)
+        : 30;
+
+    const skills = extractSkillsFromText(extractedText.toLowerCase());
+
     const aiImprovements = await generateAIImprovements(extractedText);
 
-    // Save OCR result so admin CV feed can display near real-time uploads.
+    /* =========================
+       SAVE TO DB
+    ========================= */
     try {
       await CV.create({
         user_id: req.user?._id,
@@ -60,8 +121,8 @@ export const extractText = async (req, res) => {
         summary: extractedText.slice(0, 280),
         analysis_date: new Date(),
       });
-    } catch (saveErr) {
-      console.error("CV save warning:", saveErr.message);
+    } catch (err) {
+      console.error("CV save warning:", err.message);
     }
 
     fs.unlinkSync(filePath);
@@ -72,8 +133,8 @@ export const extractText = async (req, res) => {
       atsScore,
       score: atsScore,
       method,
-      skills,            //  FIX
-      aiImprovements     //  FIX
+      skills,
+      aiImprovements,
     });
 
   } catch (err) {
