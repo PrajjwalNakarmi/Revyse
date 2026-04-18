@@ -46,6 +46,9 @@ export default function SavedJobs() {
       });
 
       setSavedJobs((prev) => prev.filter((job) => job._id !== jobId));
+      alert("Job removed");
+
+
     } catch (error) {
       console.error(error);
     }
