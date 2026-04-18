@@ -8,18 +8,20 @@ export default function UploadModal({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [error, setError] = useState(""); // NEW
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedFile(null);
       setIsDragging(false);
+      setError(""); // reset error on close
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // ✅ UPDATED VALIDATION (PDF + IMAGE)
+  // FILE VALIDATION
   const handleFileSelect = (file) => {
     if (!file) return;
 
@@ -32,20 +34,28 @@ export default function UploadModal({
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      alert("Please upload a PDF or image (JPG, PNG, WEBP)");
+      setError("Please upload a PDF or image (JPG, PNG, WEBP)");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("File must be smaller than 10MB");
+      setError("File must be smaller than 10MB");
       return;
     }
 
     setSelectedFile(file);
+    setError(""); // clear error
   };
 
   const handleUpload = () => {
-    if (!selectedFile || isUploading) return;
+    if (isUploading) return;
+
+    if (!selectedFile) {
+      setError("Please select a file before uploading");
+      return;
+    }
+
+    setError("");
     onUpload(selectedFile);
   };
 
@@ -110,7 +120,6 @@ export default function UploadModal({
               or click to browse
             </p>
 
-            {/* ✅ UPDATED INPUT */}
             <input
               ref={fileInputRef}
               type="file"
@@ -136,13 +145,23 @@ export default function UploadModal({
               </p>
             </div>
             <button
-              onClick={() => setSelectedFile(null)}
+              onClick={() => {
+                setSelectedFile(null);
+                setError("");
+              }}
               disabled={isUploading}
               className="text-sm text-[#8b2b2b] hover:underline disabled:opacity-50"
             >
               Remove
             </button>
           </div>
+        )}
+
+        {/* ERROR MESSAGE */}
+        {error && (
+          <p className="mt-3 text-sm text-red-500 text-center">
+            {error}
+          </p>
         )}
 
         {/* Footer */}
@@ -157,7 +176,7 @@ export default function UploadModal({
 
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
+            disabled={isUploading}
             className={`rounded-full px-4 py-2 text-sm font-semibold text-white ${
               isUploading
                 ? "cursor-not-allowed bg-slate-400"

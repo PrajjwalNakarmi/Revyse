@@ -41,9 +41,14 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  // ✅ UPDATED FUNCTION (PDF + IMAGE SUPPORT)
+  // UPDATED FUNCTION (PDF + IMAGE SUPPORT)
   const handleFileUpload = async (file) => {
     if (!user) return;
+
+    if (!file) {
+      alert("Please select a file before uploading");
+      return;
+    }
 
     // -------- FILE TYPE VALIDATION --------
     const allowedTypes = [
@@ -58,6 +63,7 @@ export default function Dashboard() {
       alert("Only PDF and image files (JPG, PNG) are allowed");
       return;
     }
+
 
     setIsUploading(true);
 
@@ -278,12 +284,14 @@ export default function Dashboard() {
       </main>
 
       {/* UPLOAD MODAL */}
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleFileUpload}
-        isUploading={isUploading}
-      />
+      {isUploadModalOpen && (
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          onUpload={handleFileUpload}
+          isUploading={isUploading}
+        />
+      )}
 
       <AppFooter className="mt-auto" />
 
