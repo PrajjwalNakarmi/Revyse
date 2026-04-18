@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import AppFooter from "../components/AppFooter";
 import html2pdf from "html2pdf.js";
+import TemplateSelector from "../components/TemplateSelector";
+import TemplateRenderer from "../components/TemplateRender";
 
 export default function ResumeBuilder() {
   const [resumeData, setResumeData] = useState(null);
   const [isAIEnhanced, setIsAIEnhanced] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState("original");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -222,6 +225,11 @@ export default function ResumeBuilder() {
           </div>
         </section>
 
+        <TemplateSelector
+          selected={selectedTemplate}
+          onSelect={setSelectedTemplate}
+        />
+
         <section className="mt-8 grid flex-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="glass-card rounded-3xl border border-[#1f5d66]/10 p-5 sm:p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -351,21 +359,48 @@ export default function ResumeBuilder() {
               </div>
             </div>
 
-            <div id="resume-preview" className="space-y-5 rounded-2xl border border-[#1f5d66]/12 bg-white p-6 shadow-[0_12px_35px_-25px_rgba(15,42,52,0.5)]">
-              <header>
-                <h1 className="text-2xl font-bold text-slate-900">{formData.name || "Your Name"}</h1>
-                <p className="mt-1 text-sm text-slate-600">
-                  {[formData.email, formData.phone].filter(Boolean).join(" | ") || "Email | Phone"}
-                </p>
-                {formData.linkedin && <p className="mt-1 text-sm text-[#1f5d66]">{formData.linkedin}</p>}
-              </header>
+            <div
+              id="resume-preview"
+              className="rounded-2xl border border-[#1f5d66]/12 bg-white p-6 shadow-[0_12px_35px_-25px_rgba(15,42,52,0.5)]"
+            >
+              <TemplateRenderer
+                template={selectedTemplate}
+                data={{
+                  ...formData,
+                  skills: formatList(formData.skills),
+                  experience: formatList(formData.experience),
+                  projects: formatList(formData.projects),
+                  education: formatList(formData.education),
+                }}
+                original={
+                  <>
+                    <header>
+                      <h1 className="text-2xl font-bold text-slate-900">
+                        {formData.name || "Your Name"}
+                      </h1>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {[formData.email, formData.phone].filter(Boolean).join(" | ") ||
+                          "Email | Phone"}
+                      </p>
+                      {formData.linkedin && (
+                        <p className="mt-1 text-sm text-[#1f5d66]">
+                          {formData.linkedin}
+                        </p>
+                      )}
+                    </header>
 
-              <Section title="Summary" content={formData.summary} />
-              <SectionList title="Skills" data={formatList(formData.skills)} />
-              <SectionList title="Experience" data={formatList(formData.experience)} />
-              <SectionList title="Projects" data={formatList(formData.projects)} />
-              <SectionList title="Education" data={formatList(formData.education)} />
-              <SectionList title="Certifications" data={formatList(formData.certifications)} />
+                    <Section title="Summary" content={formData.summary} />
+                    <SectionList title="Skills" data={formatList(formData.skills)} />
+                    <SectionList title="Experience" data={formatList(formData.experience)} />
+                    <SectionList title="Projects" data={formatList(formData.projects)} />
+                    <SectionList title="Education" data={formatList(formData.education)} />
+                    <SectionList
+                      title="Certifications"
+                      data={formatList(formData.certifications)}
+                    />
+                  </>
+                }
+              />
             </div>
           </aside>
         </section>
