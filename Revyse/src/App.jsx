@@ -87,7 +87,7 @@ function App() {
         }
       />
 
-      {/* ✅ ADMIN ROUTES */}
+      {/* ADMIN ROUTES */}
       <Route
         path="/admin"
         element={
