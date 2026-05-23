@@ -27,7 +27,7 @@ const cvSchema = new mongoose.Schema(
       type: String,
     },
 
-    // ✅ ADDED (from frontend)
+    // ADDED (from frontend)
     ats_score: {
       type: Number,
       default: 0,
